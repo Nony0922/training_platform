@@ -1,0 +1,40 @@
+:root {
+  --flower-bg-gradient: linear-gradient(160deg, #f5f3ff 0%, #fdf4ff 45%, #fce7f3 100%);
+  --flower-pattern: url('/flower-pattern.svg');
+  --flower-pattern-size: 960px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background-color: #f5f3ff;
+  background-image: var(--flower-pattern), var(--flower-bg-gradient);
+  background-size: var(--flower-pattern-size) var(--flower-pattern-size), 100% 100%;
+  background-attachment: fixed;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.flower-bg {
+  background-color: #f5f3ff;
+  background-image: var(--flower-pattern);
+  background-size: var(--flower-pattern-size) var(--flower-pattern-size);
+}
+
+.flower-bg-gradient {
+  background-color: #f5f3ff;
+  background-image: var(--flower-pattern), var(--flower-bg-gradient);
+  background-size: var(--flower-pattern-size) var(--flower-pattern-size), 100% 100%;
+}

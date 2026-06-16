@@ -7,7 +7,7 @@
    -------------------------------------------------------------------------- */
 
 page {
-  background: #f5f3ff;
+  background-color: #f5f3ff;
   color: #374151;
   font-size: 28rpx;
 }

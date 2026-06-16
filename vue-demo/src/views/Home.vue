@@ -327,7 +327,9 @@ const handleLogout = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #f3f4f6;
+  background-color: #f3f4f6;
+  background-image: var(--flower-pattern);
+  background-size: var(--flower-pattern-size) var(--flower-pattern-size);
   min-width: 0;
 }
 

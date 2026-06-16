@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">
+  <g fill="none">
+    <g transform="translate(64 88) scale(0.48)">
+      <circle cx="0" cy="0" r="1.6" fill="#a78bfa" opacity="0.26"/>
+      <ellipse cx="0" cy="-6.5" rx="3.6" ry="5.8" fill="#c4b5fd" opacity="0.2"/>
+      <ellipse cx="0" cy="-6.5" rx="3.6" ry="5.8" fill="#c4b5fd" opacity="0.2" transform="rotate(72)"/>
+      <ellipse cx="0" cy="-6.5" rx="3.6" ry="5.8" fill="#c4b5fd" opacity="0.2" transform="rotate(144)"/>
+      <ellipse cx="0" cy="-6.5" rx="3.6" ry="5.8" fill="#c4b5fd" opacity="0.2" transform="rotate(216)"/>
+      <ellipse cx="0" cy="-6.5" rx="3.6" ry="5.8" fill="#c4b5fd" opacity="0.2" transform="rotate(288)"/>
+    </g>
+    <circle cx="248" cy="72" r="1.8" fill="#ddd6fe" opacity="0.18"/>
+    <circle cx="216" cy="252" r="1.4" fill="#f0abfc" opacity="0.16"/>
+    <g transform="translate(268 196) scale(0.36)">
+      <circle cx="0" cy="0" r="1.4" fill="#e9d5ff" opacity="0.22"/>
+      <ellipse cx="0" cy="-6" rx="3.2" ry="5.2" fill="#e9d5ff" opacity="0.16"/>
+      <ellipse cx="0" cy="-6" rx="3.2" ry="5.2" fill="#e9d5ff" opacity="0.16" transform="rotate(72)"/>
+      <ellipse cx="0" cy="-6" rx="3.2" ry="5.2" fill="#e9d5ff" opacity="0.16" transform="rotate(144)"/>
+      <ellipse cx="0" cy="-6" rx="3.2" ry="5.2" fill="#e9d5ff" opacity="0.16" transform="rotate(216)"/>
+      <ellipse cx="0" cy="-6" rx="3.2" ry="5.2" fill="#e9d5ff" opacity="0.16" transform="rotate(288)"/>
+    </g>
+  </g>
+</svg>
