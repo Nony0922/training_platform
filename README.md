@@ -183,15 +183,15 @@ xthk-training_platform/
 | **按功能模块分** | 以业务功能为划分单位（如「考试管理」「家访管理」），不按 PC/小程序/后端分列主责 |
 | **四层一体** | 主责人对所负责模块的 PC 页面、小程序页面、后端接口、数据库表及演示数据负全部责任 |
 | **唯一主责** | 每个功能模块（含 AI 子模块）有且只有一个主责人 |
-| **A、B 均覆盖全系统** | A 主责 8 个模块、B 主责 9 个模块，合起来覆盖三端全部业务与两项 AI 功能 |
+| **A、B 均覆盖全系统** | A 主责 9 个模块、B 主责 8 个模块，合起来覆盖三端全部业务与两项 AI 功能 |
 
 ```
   分工维度：功能模块（非按端、非按技术层）
   ┌─────────────────────────────────────────────────────────┐
   │  每个模块 = PC端 + 小程序端 + 后端 + 数据库（四层一体）   │
   └─────────────────────────────────────────────────────────┘
-        同学 A 主责 8 个模块          同学 B 主责 9 个模块
-   登录/档案/公告/留言/菜单/家访     课程/订单/课表/考试/考勤/成绩/请假
+        同学 A 主责 9 个模块          同学 B 主责 8 个模块
+   登录/档案/公告/留言/菜单/家访/请假   课程/订单/课表/考试/考勤/成绩
         AI排课·展示  AI学情·展示          AI排课·规则  AI学情·数据
 ```
 
@@ -215,13 +215,13 @@ xthk-training_platform/
 | 12 | 考试管理 | **B** | `ExamManage`（管理员 + 教师授课） | `pages/exam` | `ExamController/Service`、`ExamStatusUtil` | `exam` 表 |
 | 13 | 考勤管理 | **B** | `AttendanceManage`（管理员 + 教师） | `pages/attendance` | `AttendanceController/Service` | `attendance` 表 |
 | 14 | 成绩管理 | **B** | `ScoreManage`（管理员 + 教师） | `pages/score` | `ScoreController/Service` | `score` 表 |
-| 15 | 请假管理 | **B** | `LeaveManage`（班主任审批） | `pages/leave` | `LeaveRequest`、`ParentApp` 请假/撤回 | `leave_request` 表 |
+| 15 | 请假管理 | **A** | `LeaveManage`（班主任审批） | `pages/leave` | `LeaveRequest`、`ParentApp` 请假/撤回 | `leave_request` 表 |
 | 16 | AI 智能排课 · 规则检测与数据统计 | **B** | `ScheduleAiAssistant`（规则冲突展示） | — | `ScheduleAiServiceImpl.detectConflicts`、`buildRuleSuggestions` | `class_schedule`、`clazz` 表演示冲突数据 |
 | 17 | AI 学情分析 · 数据查询与家长端 | **B** | — | `pages/report` | `SqlSafetyValidator`、`LearningReportMapper`、`ParentApp` 报告接口 | `learning_report` 表；`attendance`、`score` 演示数据 |
 
 ---
 
-### 4.2 同学 A — 主责模块明细（8 个）
+### 4.2 同学 A — 主责模块明细（9 个）
 
 #### 模块 1：登录鉴权与权限管理
 
@@ -295,9 +295,18 @@ xthk-training_platform/
 | 后端 | `LearningReportServiceImpl`（`generateSqlWithAi`、`applyInsightsWithAi`）；`/report/ai/analyze` |
 | 数据库 | `learning_report` 表（报告标题、图表配置、分析正文等写入） |
 
+#### 模块 15：请假管理
+
+| 层级 | 内容 |
+|------|------|
+| PC 端 | `LeaveManage`（班主任本班请假审批） |
+| 小程序端 | `pages/leave`（申请、撤回、查看状态） |
+| 后端 | `LeaveRequest`；`ParentApp` 请假提交/撤回；班主任审批接口 |
+| 数据库 | `leave_request` 表（含王小明待审批演示） |
+
 ---
 
-### 4.3 同学 B — 主责模块明细（9 个）
+### 4.3 同学 B — 主责模块明细（8 个）
 
 #### 模块 9：课程管理
 
@@ -353,15 +362,6 @@ xthk-training_platform/
 | 后端 | `ScoreController/Service` |
 | 数据库 | `score` 表 |
 
-#### 模块 15：请假管理
-
-| 层级 | 内容 |
-|------|------|
-| PC 端 | `LeaveManage`（班主任本班请假审批） |
-| 小程序端 | `pages/leave`（申请、撤回、查看状态） |
-| 后端 | `LeaveRequest`；`ParentApp` 请假提交/撤回；班主任审批接口 |
-| 数据库 | `leave_request` 表（含王小明待审批演示） |
-
 #### 模块 16：AI 智能排课 · 规则检测与数据统计
 
 | 层级 | 内容 |
@@ -386,13 +386,13 @@ xthk-training_platform/
 
 ### 4.4 模块数量对照
 
-| 对比项 | 同学 A（8 个模块） | 同学 B（9 个模块） |
+| 对比项 | 同学 A（9 个模块） | 同学 B（8 个模块） |
 |--------|-------------------|-------------------|
 | 平台与档案 | 登录权限、人员档案、公告、留言、教师菜单 | — |
-| 教学教务 | — | 课程、订单、课表、考试、考勤、成绩、请假 |
-| 家校服务 | 家访 | 购课订单、请假、学情报告（小程序） |
+| 教学教务 | — | 课程、订单、课表、考试、考勤、成绩 |
+| 家校服务 | 家访、请假 | 购课订单、学情报告（小程序） |
 | AI 功能 | 排课·大模型与展示、学情·大模型与 PC 展示 | 排课·规则与数据、学情·数据与家长端 |
-| 答辩演示 | 模块 1~8 端到端 | 模块 9~17 端到端 |
+| 答辩演示 | 模块 1~8、15 端到端 | 模块 9~14、16~17 端到端 |
 
 ---
 
@@ -404,12 +404,12 @@ xthk-training_platform/
 | **A** | 人员档案管理 | 学生管理按班级分组；`teacher1` 查看本班学生/家长 |
 | **A** | 公告管理 | 发布公告 → `teacher1` 公告浏览看正文 → `parent1` 小程序查看 |
 | **A** | 家访管理 | `teacher1` PC 登记 → `parent1` 小程序按孩子查看 |
+| **A** | 请假管理 | `parent1` 提交请假 → `teacher1` 本班请假审批 |
 | **A** | AI 智能排课 · 展示 | 管理员 AI 智能排课 → 点击「AI 深度分析」 |
 | **A** | AI 学情分析 · PC 展示 | `teacher1` 生成学情报告 → 导出 PDF |
 | **B** | 课程管理 + 购课订单 | `parent1` 课程浏览购课 → 订单支付或取消 |
 | **B** | 课表管理 | `teacher1` 本班+兼课课表；`parent1` 小程序课表分块 |
 | **B** | 考试/考勤/成绩管理 | `teacher2` 授课教务分组列表；`parent1` 小程序浏览 |
-| **B** | 请假管理 | `parent1` 提交请假 → `teacher1` 本班请假审批 |
 | **B** | AI 智能排课 · 规则 | 管理员 AI 智能排课 → 查看规则冲突检测结果 |
 | **B** | AI 学情分析 · 家长端 | A 推送报告后 → `parent1` 小程序学情报告查看 |
 
@@ -523,9 +523,8 @@ npm run dev
 | 提交 | 说明 | 负责人 |
 |------|------|--------|
 | `chore: add gitignore` | 添加忽略规则 | A、B |
-| `feat(mod-01~06): 登录/档案/公告/留言/菜单/家访` | 模块 1~6 四层一体 | A |
-| `feat(mod-07~08): AI排课展示、AI学情PC展示` | 模块 7~8 四层一体 | A |
-| `feat(mod-09~15): 课程/订单/课表/考试/考勤/成绩/请假` | 模块 9~15 四层一体 | B |
+| `feat(mod-01~08,15): 登录/档案/公告/留言/菜单/家访/AI/请假` | 模块 1~8、15 四层一体 | A |
+| `feat(mod-09~14): 课程/订单/课表/考试/考勤/成绩` | 模块 9~14 四层一体 | B |
 | `feat(mod-16~17): AI排课规则、AI学情家长端` | 模块 16~17 四层一体 | B |
 | `feat: PC分组列表与公告正文展示` | 归入模块 2、12~14 | A、B |
 

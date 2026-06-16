@@ -108,6 +108,7 @@ const adminSchoolMenus = [
   { path: '/home/parents', title: '家长管理', icon: '👪' },
   { path: '/home/classes', title: '班级管理', icon: '🏫' },
   { path: '/home/courses', title: '课程管理', icon: '📚' },
+  { path: '/home/progress', title: '教学进度管理', icon: '📈' },
   { path: '/home/exams', title: '考试管理', icon: '📝' },
   { path: '/home/attendance', title: '考勤管理', icon: '✅' },
   { path: '/home/schedule-ai', title: 'AI 智能排课', icon: '🤖' },
@@ -121,6 +122,7 @@ const teacherCommonMenus = [
   { path: '/home/teacher/exams', title: '考试管理', icon: '📝', breadcrumb: '教师' },
   { path: '/home/teacher/subject/attendance', title: '授课考勤', icon: '✅', breadcrumb: '教师' },
   { path: '/home/teacher/subject/scores', title: '授课成绩', icon: '🏆', breadcrumb: '教师' },
+  { path: '/home/teacher/progress', title: '教学进度管理', icon: '📈', breadcrumb: '教师' },
   { path: '/home/teacher/learning-report', title: 'AI 学情分析', icon: '📊', breadcrumb: '教师' }
 ]
 

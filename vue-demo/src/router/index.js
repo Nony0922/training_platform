@@ -18,6 +18,7 @@ const ScheduleAiAssistant = () => import('@/views/ScheduleAiAssistant.vue')
 const TeacherSchedule = () => import('@/views/TeacherSchedule.vue')
 const HomeVisitManage = () => import('@/views/HomeVisitManage.vue')
 const LearningReport = () => import('@/views/LearningReport.vue')
+const ProgressManage = () => import('@/views/ProgressManage.vue')
 
 const routes = [
   {
@@ -83,6 +84,12 @@ const routes = [
         meta: { title: '课程管理', roles: ['admin'], group: 'school' }
       },
       {
+        path: 'progress',
+        name: 'ProgressManage',
+        component: ProgressManage,
+        meta: { title: '教学进度管理', roles: ['admin'], group: 'school' }
+      },
+      {
         path: 'exams',
         name: 'ExamManage',
         component: ExamManage,
@@ -143,6 +150,12 @@ const routes = [
         name: 'TeacherSubjectScore',
         component: ScoreManage,
         meta: { title: '授课成绩', roles: ['teacher'], teacherLevels: [1, 2], scopeMode: 'teaching' }
+      },
+      {
+        path: 'teacher/progress',
+        name: 'TeacherProgress',
+        component: ProgressManage,
+        meta: { title: '教学进度管理', roles: ['teacher'], teacherLevels: [1, 2], scopeMode: 'teaching' }
       },
       {
         path: 'teacher/learning-report',

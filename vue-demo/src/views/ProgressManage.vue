@@ -10,7 +10,7 @@
             <th>ID</th>
             <th>班级</th>
             <th>课程</th>
-            <th>教师</th>
+            <th v-if="!isTeacher">教师</th>
             <th>章节</th>
             <th>计划日期</th>
             <th>实际日期</th>
@@ -23,7 +23,7 @@
             <td>{{ item.id ?? '-' }}</td>
             <td>{{ item.className ?? '-' }}</td>
             <td>{{ item.courseName ?? '-' }}</td>
-            <td>{{ item.teacherName ?? '-' }}</td>
+            <td v-if="!isTeacher">{{ item.teacherName ?? '-' }}</td>
             <td>{{ item.chapter ?? '-' }}</td>
             <td>{{ item.plannedDate ?? '-' }}</td>
             <td>{{ item.actualDate ?? '-' }}</td>
@@ -45,13 +45,13 @@
         <div class="dialog-body">
           <div class="form-item">
             <label>班级</label>
-            <select v-model="form.classId"><option :value="null">请选择</option><option v-for="c in classes" :key="c.id" :value="c.id">{{ c.name }}</option></select>
+            <select v-model="form.classId"><option :value="null">请选择</option><option v-for="c in formClasses" :key="c.id" :value="c.id">{{ c.name }}</option></select>
           </div>
           <div class="form-item">
             <label>课程</label>
             <select v-model="form.courseId" @change="onCourseChange"><option :value="null">请选择</option><option v-for="c in courses" :key="c.id" :value="c.id">{{ c.name }}</option></select>
           </div>
-          <div class="form-item">
+          <div v-if="!isTeacher" class="form-item">
             <label>教师</label>
             <select v-model="form.teacherId"><option :value="null">请选择</option><option v-for="t in teachers" :key="t.id" :value="t.id">{{ t.name }}</option></select>
           </div>
@@ -94,11 +94,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { getProgressListApi, addProgressApi, updateProgressApi, deleteProgressApi } from '@/api/progress'
 import { getClazzListApi } from '@/api/clazz'
 import { getCourseListApi } from '@/api/course'
 import { getTeacherListApi } from '@/api/teacher'
+import { getScheduleListApi } from '@/api/schedule'
+import { getScopeModeFromRoute } from '@/composables/useTeacherScope'
+
+const route = useRoute()
+const scopeMode = () => getScopeModeFromRoute(route)
 
 const list = ref([])
 const dialogVisible = ref(false)
@@ -107,6 +113,26 @@ const loading = ref(false)
 const classes = ref([])
 const courses = ref([])
 const teachers = ref([])
+const schedules = ref([])
+
+const isTeacher = computed(() => {
+  try {
+    const user = JSON.parse(localStorage.getItem('loginUser'))
+    return user?.role === 'teacher'
+  } catch {
+    return false
+  }
+})
+
+const formClasses = computed(() => {
+  if (!isTeacher.value) return classes.value
+  const classIds = new Set(
+    schedules.value
+      .filter(s => !form.courseId || s.courseId === form.courseId)
+      .map(s => s.classId)
+  )
+  return classes.value.filter(c => classIds.has(c.id))
+})
 
 const form = reactive({
   id: null,
@@ -144,7 +170,11 @@ const formatCell = (v, type) => {
   }
   return (m[type] ? m[type](v) : v) ?? '-'
 }
-const onCourseChange = () => {}
+const onCourseChange = () => {
+  if (isTeacher.value) {
+    form.classId = null
+  }
+}
 
 const resetForm = () => {
   Object.assign(form, { id: null, classId: null,
@@ -160,7 +190,7 @@ const resetForm = () => {
 
 const loadList = async () => {
   try {
-    const res = await getProgressListApi()
+    const res = await getProgressListApi(scopeMode())
     list.value = res.data || []
   } catch (e) { alert(e.message) }
 }
@@ -178,11 +208,23 @@ const handleEdit = (item) => {
 }
 
 const handleSubmit = async () => {
+  if (!form.courseId) {
+    alert('请选择课程')
+    return
+  }
+  if (!form.classId) {
+    alert('请选择班级')
+    return
+  }
+  if (!isTeacher.value && !form.teacherId) {
+    alert('请选择教师')
+    return
+  }
 
   try {
     loading.value = true
-    if (isEdit.value) await updateProgressApi(form)
-    else await addProgressApi(form)
+    if (isEdit.value) await updateProgressApi(form, scopeMode())
+    else await addProgressApi(form, scopeMode())
     alert('操作成功')
     dialogVisible.value = false
     loadList()
@@ -193,7 +235,7 @@ const handleSubmit = async () => {
 const handleDelete = async (id) => {
   if (!confirm('确定删除吗？')) return
   try {
-    await deleteProgressApi(id)
+    await deleteProgressApi(id, scopeMode())
     alert('删除成功')
     loadList()
   } catch (e) { alert(e.message) }
@@ -202,8 +244,12 @@ const handleDelete = async (id) => {
 onMounted(async () => {
   loadList()
   classes.value = (await getClazzListApi()).data || []
-courses.value = (await getCourseListApi()).data || []
-teachers.value = (await getTeacherListApi()).data || []
+  courses.value = (await getCourseListApi()).data || []
+  if (isTeacher.value) {
+    schedules.value = (await getScheduleListApi()).data || []
+  } else {
+    teachers.value = (await getTeacherListApi()).data || []
+  }
 })
 </script>
 
