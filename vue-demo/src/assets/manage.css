@@ -1,12 +1,18 @@
 /* 通用管理页面样式 */
 .manage-page {
-  background: #fff;
-  border-radius: 8px;
-  padding: 24px;
+  background: var(--surface, #fff);
+  border-radius: var(--radius-lg, 16px);
+  padding: 24px 28px;
+  box-shadow: var(--shadow-md, 0 4px 16px rgba(124, 58, 237, 0.08));
+  border: 1px solid rgba(233, 213, 255, 0.5);
 }
 
 .toolbar {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .table-container {
@@ -20,15 +26,25 @@
 
 .data-table th,
 .data-table td {
-  padding: 12px;
+  padding: 13px 14px;
   text-align: left;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-light, #f3f4f6);
   white-space: nowrap;
 }
 
 .data-table th {
-  background: #f9fafb;
+  background: linear-gradient(180deg, #faf5ff 0%, #f5f3ff 100%);
   font-weight: 600;
+  color: var(--text-primary, #374151);
+  font-size: 13px;
+}
+
+.data-table tbody tr {
+  transition: background 0.15s;
+}
+
+.data-table tbody tr:hover {
+  background: #faf5ff;
 }
 
 .actions {
@@ -37,35 +53,42 @@
 }
 
 .btn {
-  padding: 6px 12px;
+  padding: 8px 16px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm, 8px);
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .btn-sm {
-  padding: 4px 8px;
+  padding: 5px 10px;
   font-size: 12px;
 }
 
 .btn-primary {
-  background: #3b82f6;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   color: #fff;
 }
 
 .btn-info {
-  background: #6366f1;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   color: #fff;
 }
 
 .btn-success {
-  background: #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: #fff;
 }
 
 .btn-danger {
-  background: #ef4444;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: #fff;
 }
 
@@ -77,7 +100,8 @@
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(76, 29, 149, 0.25);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,12 +109,14 @@
 }
 
 .dialog {
-  background: #fff;
-  border-radius: 8px;
+  background: var(--surface, #fff);
+  border-radius: var(--radius-lg, 16px);
   width: 560px;
   max-width: 90%;
   max-height: 85vh;
   overflow-y: auto;
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(124, 58, 237, 0.12));
+  border: 1px solid rgba(233, 213, 255, 0.6);
 }
 
 .dialog-header {
@@ -135,10 +161,19 @@
 .form-item select,
 .form-item textarea {
   width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-sm, 8px);
+  padding: 10px 14px;
   box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-item input:focus,
+.form-item select:focus,
+.form-item textarea:focus {
+  outline: none;
+  border-color: var(--primary, #7c3aed);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
 }
 
 .form-item textarea {
@@ -158,9 +193,10 @@
 
 .badge {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
   font-size: 12px;
+  font-weight: 500;
 }
 
 .badge-success { background: #d1fae5; color: #065f46; }
@@ -171,18 +207,24 @@
 .empty-tip {
   padding: 48px 24px;
   text-align: center;
-  color: #9ca3af;
-  background: #f9fafb;
-  border: 1px dashed #d1d5db;
-  border-radius: 8px;
+  color: var(--text-muted, #9ca3af);
+  background: linear-gradient(180deg, #faf5ff 0%, #f9fafb 100%);
+  border: 1px dashed var(--border, #e9d5ff);
+  border-radius: var(--radius-md, 12px);
 }
 
 .data-group {
   margin-bottom: 24px;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border: 1px solid rgba(233, 213, 255, 0.5);
+  border-radius: var(--radius-md, 12px);
   overflow: hidden;
-  background: #fff;
+  background: var(--surface, #fff);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(124, 58, 237, 0.06));
+  transition: box-shadow 0.2s;
+}
+
+.data-group:hover {
+  box-shadow: var(--shadow-md, 0 4px 16px rgba(124, 58, 237, 0.08));
 }
 
 .group-header {
