@@ -18,7 +18,7 @@
 
 ## 二、系统完整功能说明
 
-系统共包含 **34 个功能模块**（含 AI 智能排课、AI 学情分析、教师课表、家访管理等），按使用端与角色划分如下。
+系统共 **18 个 A/B 分工模块**（同学 A、B 各主责 9 个），覆盖三端全部业务（含 AI 智能排课、AI 学情分析、教学进度、异常考勤、PC 订单与课表管理等），按使用端与角色划分如下。
 
 ### 2.1 小程序端（家长）— 共 13 项
 
@@ -54,7 +54,7 @@
 
 ---
 
-### 2.2 PC 端 — 管理员 — 共 12 项
+### 2.2 PC 端 — 管理员 — 共 17 项
 
 #### 权限管理（1 项）
 
@@ -62,7 +62,7 @@
 |------|------|
 | 权限管理 | 系统用户增删改查，分配角色（管理员 / 教师 / 家长）及教师级别 |
 
-#### 学校管理（11 项）
+#### 学校管理（16 项）
 
 | 功能 | 说明 |
 |------|------|
@@ -73,12 +73,17 @@
 | 家长管理 | 家长档案增删改查 |
 | 班级管理 | 班级信息及班主任配置 |
 | 课程管理 | 课程信息维护、上下架；含适用年级、学科、授课方式、有效日期、地点、名额、亮点等字段 |
+| **课程订单管理** | 订单增删改查；**按待支付 / 已支付 / 已取消分组**卡片展示；跟踪家长购课与支付状态 |
+| **课程表管理** | 全校课表 CRUD；按学期筛选；左侧**周课表可视化** + 右侧课程列表 |
+| **教学进度管理** | 各班级课程章节进度维护；进度条展示计划/实际日期与完成状态 |
 | 考试管理 | 考试安排维护；**按课程 → 班级分组**展示 |
+| 成绩管理 | 学生成绩维护；**按课程 → 考试分组**展示 |
 | 考勤管理 | 学生考勤记录维护；**按课程 → 班级分组**展示 |
-| **AI 智能排课** | 管理员 PC 可视化课表与 AI 深度分析；规则冲突检测与数据统计（A、B 各主责一个子模块，见第四节） |
-| **AI 学情分析** | 教师 PC 自然语言报告生成与 PDF 导出；家长小程序学情报告浏览（A、B 各主责一个子模块，见第四节） |
+| **异常考勤管理** | 迟到/早退/缺勤等异常记录；考勤录入时**自动同步**；支持处理与删除 |
+| **AI 智能排课** | 可视化课表与 AI 深度分析；规则冲突检测与数据统计（A、B 各主责一个子模块，见第四节） |
+| **AI 学情分析** | 自然语言报告生成与 PDF 导出；家长小程序学情报告浏览（A、B 各主责一个子模块，见第四节） |
 
-> 仓库中还包含课表 CRUD、教学进度、课程订单、异常考勤等管理页面源码；PC 端学生/考试/考勤/成绩等列表已改为**分组卡片**展示（见 2.4）；A、B 按**功能模块**分工，每模块含 PC、小程序、后端、数据库四层（见第四节）。
+> PC 端学生/考试/考勤/成绩等列表采用**分组卡片**展示（见 2.4）；A、B 按 **18 个功能模块** 分工，每模块含 PC、小程序、后端、数据库四层（见第四节）。
 
 ---
 
@@ -98,6 +103,7 @@
 | 考试管理 | 考试安排维护；**按课程 → 班级分组** | 本人负责课程下的考试（`course.teacher_id`） |
 | 授课考勤 | 授课考勤维护；**按课程 → 班级分组** | 本人负责课程的考勤记录 |
 | 授课成绩 | 授课成绩维护；**按课程 → 考试分组** | 本人负责课程相关考试成绩 |
+| 教学进度管理 | 本人负责课程的章节进度维护 | 本人负责课程（`course.teacher_id`） |
 | AI 学情分析 | 自然语言学情报告 | 按教师身份与所选班级/学生 |
 
 #### 班主任专有（仅 `teacherLevel=2` 可见）
@@ -136,7 +142,11 @@
 - **家访接口**：班主任维护 `/home-visit/*`（`scopeMode=homeroom` 限定本班学生）；家长浏览 `GET /app/parent/{parentId}/home-visits`
 - **教师课表接口**：`GET /schedule/list`（`scopeUserId` + `teacherLevel` + 可选 `semester`）；任课教师返回本人授课安排；班主任返回**本班课表与本人授课合并**；`GET /schedule/semesters` 学期列表
 - **教师数据范围**：接口通过 `scopeUserId` + `teacherLevel` 过滤；前端 `scopeMode` 区分 **teaching**（任课，`teacherLevel=1`）与 **homeroom**（班主任，`teacherLevel=2`），支持班主任兼课场景；`teaching` 模式下考试/考勤/成绩按 **`course.teacher_id`（本人负责课程）** 过滤，而非整班全部科目
-- **PC 端分组列表**：`utils/groupTeachingData.js` + `assets/manage.css`；学生按班级、考试/考勤按课程→班级、成绩按课程→考试分组展示，管理员与教师共用同一套页面组件
+- **PC 端分组列表**：`utils/groupTeachingData.js` + `assets/manage.css`；学生按班级、考试/考勤按课程→班级、成绩按课程→考试、订单按状态分组展示，管理员与教师共用同一套页面组件
+- **课程订单管理**：`/course-order/*` CRUD；管理员 PC 维护；与小程序购课订单共用 `course_order` 表
+- **课程表管理**：`/schedule/*` CRUD（管理员 `ScheduleManage`）；与教师课表查询、AI 排课共用 `class_schedule` 表
+- **教学进度**：`/progress/*` CRUD；管理员全量维护；教师按 `scopeUserId` + `teacherLevel` 限定本人负责课程
+- **异常考勤**：考勤录入/更新/删除时由 `AbnormalAttendanceService.syncFromAttendance` 自动同步；`/abnormal-attendance/*` 处理与删除
 - 登录鉴权：返回用户角色及 `parentId` / `teacherLevel` 等扩展字段
 - **AI 智能排课**、**AI 学情分析**：各拆为 A、B 两个子模块，主责划分见第四节
 
@@ -157,7 +167,7 @@ xthk-training_platform/
 ├── vue-demo/             # Vue 3 PC 前端
 │   ├── package.json
 │   └── src/
-│       ├── views/        # 页面组件
+│       ├── views/        # 页面组件（含 CourseOrderManage、ScheduleManage、ProgressManage、AbnormalAttendanceManage 等）
 │       ├── api/          # 接口封装
 │       ├── utils/        # request、groupTeachingData（PC 分组列表）等
 │       ├── assets/       # manage.css（分组卡片样式）
@@ -183,16 +193,16 @@ xthk-training_platform/
 | **按功能模块分** | 以业务功能为划分单位（如「考试管理」「家访管理」），不按 PC/小程序/后端分列主责 |
 | **四层一体** | 主责人对所负责模块的 PC 页面、小程序页面、后端接口、数据库表及演示数据负全部责任 |
 | **唯一主责** | 每个功能模块（含 AI 子模块）有且只有一个主责人 |
-| **A、B 均覆盖全系统** | A 主责 9 个模块、B 主责 8 个模块，合起来覆盖三端全部业务与两项 AI 功能 |
+| **A、B 均覆盖全系统** | 同学 A、同学 B **各主责 9 个模块**，合起来覆盖三端全部业务与两项 AI 功能 |
 
 ```
   分工维度：功能模块（非按端、非按技术层）
   ┌─────────────────────────────────────────────────────────┐
   │  每个模块 = PC端 + 小程序端 + 后端 + 数据库（四层一体）   │
   └─────────────────────────────────────────────────────────┘
-        同学 A 主责 9 个模块          同学 B 主责 8 个模块
-   登录/档案/公告/留言/菜单/家访/请假   课程/订单/课表/考试/考勤/成绩
-        AI排课·展示  AI学情·展示          AI排课·规则  AI学情·数据
+        同学 A 主责 9 个模块          同学 B 主责 9 个模块
+   登录/档案/公告/留言/菜单/家访/     课程/订单/课表/考试/考勤/成绩
+   教学进度  AI排课·展示 AI学情·展示    请假  AI排课·规则  AI学情·数据
 ```
 
 ---
@@ -209,15 +219,16 @@ xthk-training_platform/
 | 6 | 家访管理 | **A** | `HomeVisitManage`（班主任） | `pages/homevisit/list` | `HomeVisitController/Service`；`ParentAppService.getHomeVisits` | `home_visit` 表 |
 | 7 | AI 智能排课 · 大模型与展示 | **A** | `ScheduleAiAssistant`（可视化课表、AI 深度分析） | — | `SparkAiService`、`ScheduleAiController`、AI 建议编排 | 读取 `class_schedule`、`clazz`（课表模块所建表） |
 | 8 | AI 学情分析 · 大模型与 PC 展示 | **A** | `LearningReport`（ECharts、PDF 导出） | — | `LearningReportServiceImpl` 星火调用、`/report/ai/*` | `learning_report` 表（报告生成写入） |
-| 9 | 课程管理 | **B** | `CourseManage`、教师「我的课程」 | `pages/course` | `CourseController/Service`、`validatePurchasable` | `course` 表 |
-| 10 | 购课订单 | **B** | — | `pages/order` | `CourseOrder`、`ParentApp` 下单/支付/取消 | `course_order` 表 |
-| 11 | 课表管理 | **B** | `TeacherSchedule` | `pages/schedule` | `ClassScheduleController/Service`、`/schedule/list` | `class_schedule` 表 |
-| 12 | 考试管理 | **B** | `ExamManage`（管理员 + 教师授课） | `pages/exam` | `ExamController/Service`、`ExamStatusUtil` | `exam` 表 |
-| 13 | 考勤管理 | **B** | `AttendanceManage`（管理员 + 教师） | `pages/attendance` | `AttendanceController/Service` | `attendance` 表 |
-| 14 | 成绩管理 | **B** | `ScoreManage`（管理员 + 教师） | `pages/score` | `ScoreController/Service` | `score` 表 |
-| 15 | 请假管理 | **A** | `LeaveManage`（班主任审批） | `pages/leave` | `LeaveRequest`、`ParentApp` 请假/撤回 | `leave_request` 表 |
-| 16 | AI 智能排课 · 规则检测与数据统计 | **B** | `ScheduleAiAssistant`（规则冲突展示） | — | `ScheduleAiServiceImpl.detectConflicts`、`buildRuleSuggestions` | `class_schedule`、`clazz` 表演示冲突数据 |
-| 17 | AI 学情分析 · 数据查询与家长端 | **B** | — | `pages/report` | `SqlSafetyValidator`、`LearningReportMapper`、`ParentApp` 报告接口 | `learning_report` 表；`attendance`、`score` 演示数据 |
+| 9 | 教学进度管理 | **A** | `ProgressManage`（管理员 + 教师「教学进度管理」） | — | `TeachingProgressController/Service`；教师 `scopeUserId` 范围校验 | `teaching_progress` 表 |
+| 10 | 课程管理 | **B** | `CourseManage`、教师「我的课程」 | `pages/course` | `CourseController/Service`、`validatePurchasable` | `course` 表 |
+| 11 | 购课订单 | **B** | `CourseOrderManage`（按状态分组卡片） | `pages/order` | `CourseOrderController`、`ParentApp` 下单/支付/取消 | `course_order`、`payment_record` 表 |
+| 12 | 课表管理 | **B** | `ScheduleManage`（管理员 CRUD）、`TeacherSchedule` | `pages/schedule` | `ClassScheduleController/ServiceImpl`、`/schedule/list` | `class_schedule` 表 |
+| 13 | 考试管理 | **B** | `ExamManage`（管理员 + 教师授课） | `pages/exam` | `ExamController/Service`、`ExamStatusUtil` | `exam` 表 |
+| 14 | 考勤管理 | **B** | `AttendanceManage`、`AbnormalAttendanceManage`（管理员 + 教师） | `pages/attendance` | `AttendanceController/Service`；`AbnormalAttendanceController` 自动同步与处理 | `attendance`、`abnormal_attendance` 表 |
+| 15 | 成绩管理 | **B** | `ScoreManage`（管理员 + 教师） | `pages/score` | `ScoreController/Service` | `score` 表 |
+| 16 | 请假管理 | **B** | `LeaveManage`（班主任审批） | `pages/leave` | `LeaveRequest`、`ParentApp` 请假/撤回 | `leave_request` 表 |
+| 17 | AI 智能排课 · 规则检测与数据统计 | **B** | `ScheduleAiAssistant`（规则冲突展示） | — | `ScheduleAiServiceImpl.detectConflicts`、`buildRuleSuggestions` | `class_schedule`、`clazz` 表演示冲突数据 |
+| 18 | AI 学情分析 · 数据查询与家长端 | **B** | — | `pages/report` | `SqlSafetyValidator`、`LearningReportMapper`、`ParentApp` 报告接口 | `learning_report` 表；`attendance`、`score` 演示数据 |
 
 ---
 
@@ -295,20 +306,20 @@ xthk-training_platform/
 | 后端 | `LearningReportServiceImpl`（`generateSqlWithAi`、`applyInsightsWithAi`）；`/report/ai/analyze` |
 | 数据库 | `learning_report` 表（报告标题、图表配置、分析正文等写入） |
 
-#### 模块 15：请假管理
+#### 模块 9：教学进度管理
 
 | 层级 | 内容 |
 |------|------|
-| PC 端 | `LeaveManage`（班主任本班请假审批） |
-| 小程序端 | `pages/leave`（申请、撤回、查看状态） |
-| 后端 | `LeaveRequest`；`ParentApp` 请假提交/撤回；班主任审批接口 |
-| 数据库 | `leave_request` 表（含王小明待审批演示） |
+| PC 端 | `ProgressManage.vue`（管理员全量维护；教师按本人负责课程维护章节进度） |
+| 小程序端 | — |
+| 后端 | `TeachingProgressController/ServiceImpl`；`/progress/*`；教师 `scopeUserId` + `teacherLevel` 校验 |
+| 数据库 | `teaching_progress` 表（章节、计划/实际日期、完成状态等） |
 
 ---
 
-### 4.3 同学 B — 主责模块明细（8 个）
+### 4.3 同学 B — 主责模块明细（9 个）
 
-#### 模块 9：课程管理
+#### 模块 10：课程管理
 
 | 层级 | 内容 |
 |------|------|
@@ -317,25 +328,25 @@ xthk-training_platform/
 | 后端 | `CourseController/Service`；`validatePurchasable`、`incrementEnrolledCount` |
 | 数据库 | `course` 表（含 `targetGrade`、`teachMode`、`maxStudents` 等） |
 
-#### 模块 10：购课订单
+#### 模块 11：购课订单
 
 | 层级 | 内容 |
 |------|------|
-| PC 端 | — |
+| PC 端 | `CourseOrderManage.vue`（按待支付/已支付/已取消分组卡片；增删改查） |
 | 小程序端 | `pages/order`（列表、详情、支付、取消待支付） |
-| 后端 | `CourseOrder`；`ParentApp` 创建/支付/取消订单 |
-| 数据库 | `course_order` 表（含 `ORD20250315002` 待支付演示） |
+| 后端 | `CourseOrderController`；`ParentApp` 创建/支付/取消订单 |
+| 数据库 | `course_order`、`payment_record` 表（含 `ORD20250315002` 待支付演示） |
 
-#### 模块 11：课表管理
+#### 模块 12：课表管理
 
 | 层级 | 内容 |
 |------|------|
-| PC 端 | `TeacherSchedule.vue`（周课表；班主任本班+兼课合并；高亮本人授课） |
+| PC 端 | `ScheduleManage.vue`（管理员全校课表 CRUD + 周课表可视化）；`TeacherSchedule.vue`（教师本班+兼课合并；高亮本人授课） |
 | 小程序端 | `pages/schedule`（按学生分块表格） |
 | 后端 | `ClassScheduleController/ServiceImpl`；`/schedule/list`、`/schedule/semesters` |
 | 数据库 | `class_schedule` 表；`training.sql` 课表演示数据 |
 
-#### 模块 12：考试管理
+#### 模块 13：考试管理
 
 | 层级 | 内容 |
 |------|------|
@@ -344,16 +355,16 @@ xthk-training_platform/
 | 后端 | `ExamController/Service`；`teachingCourseIds` 授课范围过滤 |
 | 数据库 | `exam` 表 |
 
-#### 模块 13：考勤管理
+#### 模块 14：考勤管理
 
 | 层级 | 内容 |
 |------|------|
-| PC 端 | `AttendanceManage`（按课程→班级分组） |
+| PC 端 | `AttendanceManage`（按课程→班级分组）；`AbnormalAttendanceManage`（异常记录处理，考勤录入自动同步） |
 | 小程序端 | `pages/attendance`（按学生分块） |
-| 后端 | `AttendanceController/Service` |
-| 数据库 | `attendance` 表 |
+| 后端 | `AttendanceController/Service`；`AbnormalAttendanceController/Service` |
+| 数据库 | `attendance`、`abnormal_attendance` 表 |
 
-#### 模块 14：成绩管理
+#### 模块 15：成绩管理
 
 | 层级 | 内容 |
 |------|------|
@@ -362,7 +373,16 @@ xthk-training_platform/
 | 后端 | `ScoreController/Service` |
 | 数据库 | `score` 表 |
 
-#### 模块 16：AI 智能排课 · 规则检测与数据统计
+#### 模块 16：请假管理
+
+| 层级 | 内容 |
+|------|------|
+| PC 端 | `LeaveManage`（班主任本班请假审批） |
+| 小程序端 | `pages/leave`（申请、撤回、查看状态） |
+| 后端 | `LeaveRequestController/Service`；`ParentApp` 请假提交/撤回；班主任审批接口 |
+| 数据库 | `leave_request` 表（含王小明待审批演示） |
+
+#### 模块 17：AI 智能排课 · 规则检测与数据统计
 
 | 层级 | 内容 |
 |------|------|
@@ -371,7 +391,7 @@ xthk-training_platform/
 | 后端 | `ScheduleAiServiceImpl.detectConflicts`、`buildRuleSuggestions`；`StudentMapper.countByClassId` |
 | 数据库 | `class_schedule`、`clazz.capacity` 演示冲突数据（`2025春季` 学期） |
 
-#### 模块 17：AI 学情分析 · 数据查询与家长端
+#### 模块 18：AI 学情分析 · 数据查询与家长端
 
 | 层级 | 内容 |
 |------|------|
@@ -380,19 +400,19 @@ xthk-training_platform/
 | 后端 | `SqlSafetyValidator`、`SchemaProvider`；`LearningReportMapper`；`ParentApp` 报告列表/详情 |
 | 数据库 | `learning_report` 表（读取推送记录）；`attendance`、`score` 学情演示数据 |
 
-**B 另负责：** `groupTeachingData.js`、`manage.css`（考试/考勤/成绩 PC 分组列表，归入模块 12~14）；`training.sql` 中课程/课表/订单/兼课（张老师兼英语口语）演示数据。
+**B 另负责：** `groupTeachingData.js`、`manage.css`（考试/考勤/成绩 PC 分组列表，归入模块 13~15）；`training.sql` 中课程/课表/订单/兼课（张老师兼英语口语）演示数据。
 
 ---
 
 ### 4.4 模块数量对照
 
-| 对比项 | 同学 A（9 个模块） | 同学 B（8 个模块） |
+| 对比项 | 同学 A（9 个模块） | 同学 B（9 个模块） |
 |--------|-------------------|-------------------|
 | 平台与档案 | 登录权限、人员档案、公告、留言、教师菜单 | — |
-| 教学教务 | — | 课程、订单、课表、考试、考勤、成绩 |
-| 家校服务 | 家访、请假 | 购课订单、学情报告（小程序） |
+| 教学教务 | 教学进度 | 课程、订单、课表、考试、考勤、成绩 |
+| 家校服务 | 家访 | 请假、购课订单、学情报告（小程序） |
 | AI 功能 | 排课·大模型与展示、学情·大模型与 PC 展示 | 排课·规则与数据、学情·数据与家长端 |
-| 答辩演示 | 模块 1~8、15 端到端 | 模块 9~14、16~17 端到端 |
+| 答辩演示 | 模块 1~9 端到端 | 模块 10~18 端到端 |
 
 ---
 
@@ -404,12 +424,13 @@ xthk-training_platform/
 | **A** | 人员档案管理 | 学生管理按班级分组；`teacher1` 查看本班学生/家长 |
 | **A** | 公告管理 | 发布公告 → `teacher1` 公告浏览看正文 → `parent1` 小程序查看 |
 | **A** | 家访管理 | `teacher1` PC 登记 → `parent1` 小程序按孩子查看 |
-| **A** | 请假管理 | `parent1` 提交请假 → `teacher1` 本班请假审批 |
+| **A** | 教学进度管理 | `admin` 维护全校进度；`teacher2` 维护本人数学课程章节进度 |
 | **A** | AI 智能排课 · 展示 | 管理员 AI 智能排课 → 点击「AI 深度分析」 |
 | **A** | AI 学情分析 · PC 展示 | `teacher1` 生成学情报告 → 导出 PDF |
-| **B** | 课程管理 + 购课订单 | `parent1` 课程浏览购课 → 订单支付或取消 |
-| **B** | 课表管理 | `teacher1` 本班+兼课课表；`parent1` 小程序课表分块 |
-| **B** | 考试/考勤/成绩管理 | `teacher2` 授课教务分组列表；`parent1` 小程序浏览 |
+| **B** | 课程管理 + 购课订单 | `admin` PC 订单管理；`parent1` 小程序课程浏览购课 → 支付或取消 |
+| **B** | 课表管理 | `admin` 课程表 CRUD；`teacher1` 本班+兼课课表；`parent1` 小程序课表分块 |
+| **B** | 请假管理 | `parent1` 提交请假 → `teacher1` 本班请假审批 |
+| **B** | 考试/考勤/成绩管理 | `teacher2` 授课教务分组列表；录入迟到/缺勤后 `admin` 异常考勤处理；`parent1` 小程序浏览 |
 | **B** | AI 智能排课 · 规则 | 管理员 AI 智能排课 → 查看规则冲突检测结果 |
 | **B** | AI 学情分析 · 家长端 | A 推送报告后 → `parent1` 小程序学情报告查看 |
 
@@ -458,8 +479,8 @@ spark:
   api-password: 你的APIPassword
 ```
 
-4. **AI 智能排课**：模块 16（B）规则检测 → 模块 7（A）AI 深度分析；`2025春季` 学期含冲突演示数据
-5. **AI 学情分析**：模块 8（A）PC 生成报告 → 模块 17（B）家长小程序查看；`training.sql` 已含演示数据
+4. **AI 智能排课**：模块 17（B）规则检测 → 模块 7（A）AI 深度分析；`2025春季` 学期含冲突演示数据
+5. **AI 学情分析**：模块 8（A）PC 生成报告 → 模块 18（B）家长小程序查看；`training.sql` 已含演示数据
 
 **3. 启动 PC 前端**
 
@@ -495,7 +516,10 @@ npm run dev
 | **请假** | `parent1` 小程序「请假申请」查看/提交/撤回；`teacher1` PC「本班请假」审批（初始有一条王小明待审批病假） |
 | **家访** | `teacher1` PC「班主任专有 → 家访管理」登记本班家访；`parent1` 小程序「家访记录」查看王小明记录（初始有一条 2025-02-20 电话家访） |
 | **我的课表** | `teacher1`：本班完整课表 + 本人英语口语高亮；`teacher2`/`teacher3`：仅本人授课安排 |
-| **分组列表展示** | `admin` → 学生管理（按班级）、考试/考勤管理（按课程→班级）；`teacher1` → 考试/授课考勤/授课成绩（仅英语口语分组数据） |
+| **分组列表展示** | `admin` → 学生管理（按班级）、考试/考勤管理（按课程→班级）、课程订单（按状态）；`teacher1` → 考试/授课考勤/授课成绩（仅英语口语分组数据） |
+| **课程表管理** | `admin` → 课程表管理 → 按学期查看周课表、新增/编辑排课 |
+| **教学进度** | `admin` → 教学进度管理；`teacher2` → 教学进度管理（仅本人数学课程） |
+| **异常考勤** | `teacher2` 授课考勤录入迟到/缺勤 → `admin` 异常考勤管理查看并处理 |
 | **班主任兼课** | `teacher1` 登录后可见全部「任课老师功能」+「班主任专有」；「我的课程」含英语口语启蒙；授课教务不混入本班语文/数学 |
 | **任课教师菜单** | `teacher2`/`teacher3` 登录后仅「任课老师功能」，无「班主任专有」分支 |
 | **购课** | `parent1` → 课程 Tab → 筛选线下/线上 → 详情页查看年级/有效期/方式 → 加入订单或支付 |
@@ -513,8 +537,8 @@ npm run dev
 4. 未配置 `spark.api-password` 时，AI 排课仍可使用规则引擎检测冲突，AI 学情分析仍可使用预置查询模板，但不会调用大模型生成建议/报告
 5. **数据库**：请完整执行 `demo/src/main/resources/training.sql`（唯一数据库脚本，含建库、建表及全部演示数据）；含 `teacher3`（王老师）语文任课、**张老师(teacher1) 班主任兼英语口语** 等兼课演示数据
 6. **教师角色**：`teacher_level=2` 为班主任，额外显示「班主任专有」菜单；所有教师共用「任课老师功能」菜单。接口通过 `scopeMode`（`teaching` / `homeroom`）区分任课与本班数据范围；`teaching` 模式下考试/考勤/成绩按本人负责课程（`course.teacher_id`）过滤
-7. **PC 分组列表**：学生管理按班级分组；考试/考勤按课程→班级分组；成绩按课程→考试分组；分组逻辑见 `vue-demo/src/utils/groupTeachingData.js`，样式见 `assets/manage.css`
-8. **A/B 分工**：严格按 **17 个功能模块** 划分，每模块含 PC、小程序、后端、数据库四层（详见第四节 4.1）
+7. **PC 分组列表**：学生管理按班级分组；考试/考勤按课程→班级分组；成绩按课程→考试分组；课程订单按状态分组；分组逻辑见 `vue-demo/src/utils/groupTeachingData.js`，样式见 `assets/manage.css`
+8. **A/B 分工**：严格按 **18 个功能模块** 划分，同学 A、B **各主责 9 个**，每模块含 PC、小程序、后端、数据库四层（详见第四节 4.1）
 
 ---
 
@@ -523,10 +547,10 @@ npm run dev
 | 提交 | 说明 | 负责人 |
 |------|------|--------|
 | `chore: add gitignore` | 添加忽略规则 | A、B |
-| `feat(mod-01~08,15): 登录/档案/公告/留言/菜单/家访/AI/请假` | 模块 1~8、15 四层一体 | A |
-| `feat(mod-09~14): 课程/订单/课表/考试/考勤/成绩` | 模块 9~14 四层一体 | B |
-| `feat(mod-16~17): AI排课规则、AI学情家长端` | 模块 16~17 四层一体 | B |
-| `feat: PC分组列表与公告正文展示` | 归入模块 2、12~14 | A、B |
+| `feat(mod-01~08,09): 登录/档案/公告/留言/菜单/家访/AI/教学进度` | 模块 1~9 四层一体 | A |
+| `feat(mod-10~15): 课程/订单/课表/考试/考勤/成绩` | 模块 10~15 四层一体 | B |
+| `feat(mod-16~18): 请假、AI排课规则、AI学情家长端` | 模块 16~18 四层一体 | B |
+| `feat: PC分组列表、订单/课表/异常考勤/教学进度` | 归入模块 9~15 | A、B |
 
 ---
 

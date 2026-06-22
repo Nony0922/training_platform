@@ -13,7 +13,8 @@ export function getTeacherScopeParams(mode) {
       else if (mode === 'homeroom') teacherLevel = 2
       return {
         scopeUserId: user.id,
-        teacherLevel
+        teacherLevel,
+        scopeTeacherId: user.teacherId ?? null
       }
     }
   } catch {

@@ -6,6 +6,8 @@ CREATE DATABASE IF NOT EXISTS training_platform DEFAULT CHARACTER SET utf8mb4 CO
 USE training_platform;
 
 DROP TABLE IF EXISTS learning_report;
+DROP TABLE IF EXISTS payment_record;
+DROP TABLE IF EXISTS student_course_enrollment;
 DROP TABLE IF EXISTS course_order;
 DROP TABLE IF EXISTS message;
 DROP TABLE IF EXISTS home_visit;
@@ -194,6 +196,7 @@ CREATE TABLE attendance (
     status TINYINT DEFAULT 1 COMMENT '1正常 2迟到 3早退 4缺勤 5请假',
     remark VARCHAR(200),
     recorder_id INT,
+    abnormal_dismissed TINYINT DEFAULT 0 COMMENT '1管理员已关闭异常提醒',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP
 ) COMMENT '考勤表';
 
@@ -221,7 +224,7 @@ CREATE TABLE leave_request (
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     reason TEXT,
-    status TINYINT DEFAULT 0 COMMENT '0待审批 1已通过 2已驳回',
+    status TINYINT DEFAULT 0 COMMENT '0待审批 1已通过 2已驳回 3已撤回',
     approver_id INT,
     approve_time DATETIME,
     remark VARCHAR(500),
@@ -259,6 +262,7 @@ CREATE TABLE course_order (
     order_no VARCHAR(50) NOT NULL UNIQUE,
     parent_id INT NOT NULL,
     course_id INT NOT NULL,
+    student_id INT COMMENT '选课学生，支付成功后写入',
     course_name VARCHAR(100),
     teacher_name VARCHAR(50),
     hours INT,
@@ -267,6 +271,33 @@ CREATE TABLE course_order (
     pay_time DATETIME,
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP
 ) COMMENT '课程订单表';
+
+-- 学生选课记录（支付成功后建立）
+CREATE TABLE student_course_enrollment (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT NOT NULL,
+    course_id INT NOT NULL,
+    order_id INT COMMENT '关联订单',
+    parent_id INT COMMENT '下单家长',
+    status TINYINT DEFAULT 1 COMMENT '1有效 0已退课/失效',
+    enroll_time DATETIME COMMENT '选课时间',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_enrollment_student_course (student_id, course_id)
+) COMMENT '学生选课表';
+
+-- 支付流水（模拟第三方支付）
+CREATE TABLE payment_record (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT NOT NULL,
+    payment_no VARCHAR(50) NOT NULL UNIQUE COMMENT '支付单号',
+    amount DECIMAL(10,2) NOT NULL,
+    status TINYINT DEFAULT 0 COMMENT '0待支付 1已支付 2已取消 3已退款',
+    pay_channel VARCHAR(20) DEFAULT 'simulated' COMMENT '支付渠道',
+    pay_time DATETIME COMMENT '支付成功时间',
+    finish_time DATETIME COMMENT '取消/退款完成时间',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_payment_order (order_id)
+) COMMENT '支付流水表';
 
 -- AI 学情分析报告
 CREATE TABLE learning_report (
@@ -446,15 +477,12 @@ JOIN (
 -- 一年级1班（class_id=1）含语文 25 条 + 英语口语 6 条，供 AI 预设「统计一年级1班各考勤状态的人数分布」
 
 INSERT INTO abnormal_attendance (attendance_id, student_id, abnormal_type, description, handle_status)
-SELECT a.id, s.id, 2, '迟到15分钟', 0
+SELECT a.id, a.student_id, a.status,
+  COALESCE(NULLIF(TRIM(a.remark), ''), CONCAT('考勤自动同步：', a.attend_date, ' ',
+    CASE a.status WHEN 2 THEN '迟到' WHEN 3 THEN '早退' WHEN 4 THEN '缺勤' END)),
+  0
 FROM attendance a
-JOIN student s ON a.student_id = s.id
-WHERE s.name = '王小明' AND a.attend_date = '2025-03-03' AND a.status = 2
-UNION ALL
-SELECT a.id, s.id, 4, '未到课，未请假', 0
-FROM attendance a
-JOIN student s ON a.student_id = s.id
-WHERE s.name = '赵小强' AND a.attend_date = '2025-03-08' AND a.status = 4;
+WHERE a.status IN (2, 3, 4);
 
 INSERT INTO leave_request (student_id, applicant_id, applicant_name, leave_type, start_date, end_date, reason, status)
 SELECT s.id, u.id, '王家长', 2, '2025-03-10', '2025-03-11', '感冒发烧，需要休息', 0
@@ -472,14 +500,33 @@ SELECT p.id, '赵小强最近数学作业完成情况如何？', 0 FROM parent p
 UNION ALL
 SELECT p.id, '周小杰能否申请调课？', 1 FROM parent p WHERE p.phone = '13800000006';
 
-INSERT INTO course_order (order_no, parent_id, course_id, course_name, teacher_name, hours, fee, status)
-SELECT 'ORD20250301001', p.id, 1, '小学语文基础', '王老师', 48, 3600.00, 1 FROM parent p WHERE p.phone = '13800000004'
+INSERT INTO course_order (order_no, parent_id, course_id, student_id, course_name, teacher_name, hours, fee, status, pay_time)
+SELECT 'ORD20250301001', p.id, 1, s.id, '小学语文基础', '王老师', 48, 3600.00, 1, '2025-03-01 10:00:00'
+FROM parent p
+JOIN student s ON s.parent_id = p.id AND s.name = '王小明'
+WHERE p.phone = '13800000004'
 UNION ALL
-SELECT 'ORD20250315002', p.id, 3, '英语口语启蒙', '张老师', 24, 1800.00, 0 FROM parent p WHERE p.phone = '13800000004'
+SELECT 'ORD20250315002', p.id, 3, NULL, '英语口语启蒙', '张老师', 24, 1800.00, 0, NULL
+FROM parent p WHERE p.phone = '13800000004'
 UNION ALL
-SELECT 'ORD20250320003', p.id, 1, '小学语文基础', '王老师', 48, 3600.00, 1 FROM parent p WHERE p.phone = '13800000005'
+SELECT 'ORD20250320003', p.id, 1, s.id, '小学语文基础', '王老师', 48, 3600.00, 1, '2025-03-20 14:30:00'
+FROM parent p
+JOIN student s ON s.parent_id = p.id AND s.name = '陈小华'
+WHERE p.phone = '13800000005'
 UNION ALL
-SELECT 'ORD20250322004', p.id, 2, '小学数学提高', '李老师', 36, 2800.00, 0 FROM parent p WHERE p.phone = '13800000007';
+SELECT 'ORD20250322004', p.id, 2, NULL, '小学数学提高', '李老师', 36, 2800.00, 0, NULL
+FROM parent p WHERE p.phone = '13800000007';
+
+INSERT INTO payment_record (order_id, payment_no, amount, status, pay_channel, pay_time, finish_time)
+SELECT co.id, CONCAT('PAY', co.order_no), co.fee,
+       CASE WHEN co.status = 1 THEN 1 WHEN co.status = 2 THEN 2 ELSE 0 END,
+       'simulated', co.pay_time, NULL
+FROM course_order co;
+
+INSERT INTO student_course_enrollment (student_id, course_id, order_id, parent_id, status, enroll_time)
+SELECT co.student_id, co.course_id, co.id, co.parent_id, 1, co.pay_time
+FROM course_order co
+WHERE co.status = 1 AND co.student_id IS NOT NULL;
 
 -- 说明：本文件为唯一数据库脚本，包含建库、建表及全部初始/演示数据（含 AI 学情分析、家长绑定、多家长多孩家庭等）。
 --

@@ -1,40 +1,37 @@
 <template>
   <div class="manage-page">
+    <PageIntro text="跟踪各班级课程教学进度，进度条列表直观展示章节完成情况。" />
+    <StatCards :items="progressStats" />
     <div class="toolbar">
       <button class="btn btn-primary" @click="handleAdd">新增教学进度</button>
     </div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>班级</th>
-            <th>课程</th>
-            <th v-if="!isTeacher">教师</th>
-            <th>章节</th>
-            <th>计划日期</th>
-            <th>实际日期</th>
-            <th>状态</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in list" :key="item.id">
-            <td>{{ item.id ?? '-' }}</td>
-            <td>{{ item.className ?? '-' }}</td>
-            <td>{{ item.courseName ?? '-' }}</td>
-            <td v-if="!isTeacher">{{ item.teacherName ?? '-' }}</td>
-            <td>{{ item.chapter ?? '-' }}</td>
-            <td>{{ item.plannedDate ?? '-' }}</td>
-            <td>{{ item.actualDate ?? '-' }}</td>
-            <td>{{ formatCell(item.status, 'progressStatus') }}</td>
-            <td class="actions">
-              <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
-              <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-if="!list.length" class="empty-tip">暂无教学进度数据</div>
+    <div v-else class="progress-list">
+      <div v-for="item in list" :key="item.id" class="progress-item">
+        <div class="progress-item-head">
+          <div>
+            <div class="progress-item-title">{{ item.courseName ?? '-' }} · {{ item.chapter ?? '-' }}</div>
+            <div class="progress-item-sub">
+              {{ item.className ?? '-' }}
+              <template v-if="!isTeacher"> · {{ item.teacherName ?? '-' }}</template>
+            </div>
+          </div>
+          <span :class="['badge', item.status === 2 ? 'badge-success' : item.status === 1 ? 'badge-warning' : 'badge-info']">
+            {{ formatCell(item.status, 'progressStatus') }}
+          </span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-track-fill" :class="`progress-track-fill--${item.status ?? 0}`" />
+        </div>
+        <div class="progress-dates">
+          <span>计划：{{ item.plannedDate ?? '-' }}</span>
+          <span>实际：{{ item.actualDate ?? '-' }}</span>
+        </div>
+        <div class="entity-card-foot" style="border-top: none; padding-top: 8px; margin-top: 4px">
+          <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
+          <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
+        </div>
+      </div>
     </div>
     <div v-if="dialogVisible" class="dialog-overlay" @click.self="dialogVisible = false">
       <div class="dialog">
@@ -102,6 +99,11 @@ import { getCourseListApi } from '@/api/course'
 import { getTeacherListApi } from '@/api/teacher'
 import { getScheduleListApi } from '@/api/schedule'
 import { getScopeModeFromRoute } from '@/composables/useTeacherScope'
+import PageIntro from '@/components/PageIntro.vue'
+import StatCards from '@/components/StatCards.vue'
+import { useFormatCell } from '@/composables/useFormatCell'
+
+const { formatCell } = useFormatCell()
 
 const route = useRoute()
 const scopeMode = () => getScopeModeFromRoute(route)
@@ -114,6 +116,13 @@ const classes = ref([])
 const courses = ref([])
 const teachers = ref([])
 const schedules = ref([])
+
+const progressStats = computed(() => [
+  { label: '进度条目', value: list.value.length, icon: '📈', tone: 'purple' },
+  { label: '未开始', value: list.value.filter(p => p.status === 0).length, icon: '⏳', tone: 'orange' },
+  { label: '进行中', value: list.value.filter(p => p.status === 1).length, icon: '🔄', tone: 'blue' },
+  { label: '已完成', value: list.value.filter(p => p.status === 2).length, icon: '✅', tone: 'green' }
+])
 
 const isTeacher = computed(() => {
   try {
@@ -147,29 +156,6 @@ const form = reactive({
   remark: ''
 })
 
-
-const formatCell = (v, type) => {
-  const m = {
-    gender: v => v === 1 ? '男' : v === 2 ? '女' : '-',
-    teacherLevel: v => v === 2 ? '班主任' : v === 1 ? '任课教师' : '-',
-    status: v => v === 1 ? '正常' : '停用',
-    shelf: v => v === 1 ? '上架' : '下架',
-    annStatus: v => v === 1 ? '已发布' : '草稿',
-    role: v => ({all:'全部',admin:'管理员',teacher:'教师',parent:'家长'}[v] || v),
-    weekday: v => ['','周一','周二','周三','周四','周五','周六','周日'][v] || '-',
-    progressStatus: v => ['未开始','进行中','已完成'][v] || '-',
-    examStatus: v => ['未开始','进行中','已结束'][v] || '-',
-    attendanceStatus: v => ['','正常','迟到','早退','缺勤','请假'][v] || '-',
-    abnormalType: v => ['','','迟到','早退','缺勤'][v] || '-',
-    handleStatus: v => v === 1 ? '已处理' : '待处理',
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回'][v] || '-',
-    visitType: v => ['','上门','电话','线上'][v] || '-',
-    orderStatus: v => ['待支付','已支付','已取消'][v] || '-',
-    msgStatus: v => v === 1 ? '已回复' : '待回复',
-  }
-  return (m[type] ? m[type](v) : v) ?? '-'
-}
 const onCourseChange = () => {
   if (isTeacher.value) {
     form.classId = null

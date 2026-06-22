@@ -5,4 +5,5 @@ import java.util.List;
 public interface TeacherScopeService {
     List<Integer> resolveClassIds(Integer userId, Integer teacherLevel);
     Integer resolveTeacherId(Integer userId);
+    Integer resolveTeacherId(Integer userId, Integer scopeTeacherId);
 }

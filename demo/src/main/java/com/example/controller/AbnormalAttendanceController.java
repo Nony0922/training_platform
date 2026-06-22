@@ -16,35 +16,40 @@ public class AbnormalAttendanceController {
     private AbnormalAttendanceService abnormalAttendanceService;
 
     @GetMapping("/list")
-    public List<AbnormalAttendance> findAll() { return abnormalAttendanceService.findAll(); }
+    public List<AbnormalAttendance> findAll() {
+        return abnormalAttendanceService.findAll();
+    }
 
-    @GetMapping("/{id}")
-    public AbnormalAttendance findById(@PathVariable Integer id) { return abnormalAttendanceService.findById(id); }
-
-    @PostMapping("/add")
-    public Map<String, Object> insert(@RequestBody AbnormalAttendance entity) {
+    @PutMapping("/{id:\\d+}/handle")
+    public Map<String, Object> markHandled(@PathVariable Integer id, @RequestBody Map<String, Object> body) {
         Map<String, Object> result = new HashMap<>();
-        int r = abnormalAttendanceService.insert(entity);
-        result.put("code", r > 0 ? 200 : 500);
-        result.put("msg", r > 0 ? "添加成功" : "添加失败");
+        try {
+            String handleResult = body.get("handleResult") != null ? String.valueOf(body.get("handleResult")) : null;
+            Integer handlerId = null;
+            if (body.get("handlerId") != null) {
+                handlerId = ((Number) body.get("handlerId")).intValue();
+            }
+            int r = abnormalAttendanceService.markHandled(id, handleResult, handlerId);
+            result.put("code", r > 0 ? 200 : 500);
+            result.put("msg", r > 0 ? "处理成功" : "处理失败");
+        } catch (RuntimeException e) {
+            result.put("code", 500);
+            result.put("msg", e.getMessage());
+        }
         return result;
     }
 
-    @PutMapping("/update")
-    public Map<String, Object> update(@RequestBody AbnormalAttendance entity) {
-        Map<String, Object> result = new HashMap<>();
-        int r = abnormalAttendanceService.update(entity);
-        result.put("code", r > 0 ? 200 : 500);
-        result.put("msg", r > 0 ? "更新成功" : "更新失败");
-        return result;
-    }
-
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     public Map<String, Object> deleteById(@PathVariable Integer id) {
         Map<String, Object> result = new HashMap<>();
-        int r = abnormalAttendanceService.deleteById(id);
-        result.put("code", r > 0 ? 200 : 500);
-        result.put("msg", r > 0 ? "删除成功" : "删除失败");
+        try {
+            int r = abnormalAttendanceService.deleteById(id);
+            result.put("code", r > 0 ? 200 : 500);
+            result.put("msg", r > 0 ? "删除成功" : "删除失败");
+        } catch (RuntimeException e) {
+            result.put("code", 500);
+            result.put("msg", e.getMessage());
+        }
         return result;
     }
 }

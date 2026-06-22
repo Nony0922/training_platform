@@ -31,35 +31,44 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findById(Integer id) {
-        return userMapper.findById(id);
+        User user = userMapper.findById(id);
+        if (user != null) {
+            enrichLoginProfile(user);
+        }
+        return user;
     }
 
     @Override
     public User login(String username, String password) {
         User user = userMapper.login(username, password);
-        if (user != null && "parent".equals(user.getRole())) {
-            if (user.getParentId() == null) {
-                Parent parent = parentService.findByUserId(user.getId());
-                if (parent == null) {
-                    parent = new Parent();
-                    parent.setUserId(user.getId());
-                    parent.setName(user.getName());
-                    parent.setPhone(user.getPhone() != null ? user.getPhone() : user.getUsername());
-                    parentService.insert(parent);
-                    parent = parentService.findByUserId(user.getId());
-                }
-                if (parent != null) {
-                    user.setParentId(parent.getId());
-                }
+        if (user != null) {
+            enrichLoginProfile(user);
+        }
+        return user;
+    }
+
+    /** 登录/刷新时补全 parentId、teacherId 等非 sys_user 表字段 */
+    private void enrichLoginProfile(User user) {
+        if ("parent".equals(user.getRole()) && user.getParentId() == null) {
+            Parent parent = parentService.findByUserId(user.getId());
+            if (parent == null) {
+                parent = new Parent();
+                parent.setUserId(user.getId());
+                parent.setName(user.getName());
+                parent.setPhone(user.getPhone() != null ? user.getPhone() : user.getUsername());
+                parentService.insert(parent);
+                parent = parentService.findByUserId(user.getId());
+            }
+            if (parent != null) {
+                user.setParentId(parent.getId());
             }
         }
-        if (user != null && "teacher".equals(user.getRole())) {
+        if ("teacher".equals(user.getRole())) {
             Teacher teacher = teacherMapper.findByUserId(user.getId());
             if (teacher != null) {
                 user.setTeacherId(teacher.getId());
             }
         }
-        return user;
     }
 
     @Override

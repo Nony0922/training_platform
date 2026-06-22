@@ -7,19 +7,15 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Attendance {
+public class StudentCourseEnrollment {
     private Integer id;
     private Integer studentId;
-    private Integer classId;
     private Integer courseId;
-    private String attendDate;
+    private Integer orderId;
+    private Integer parentId;
     private Integer status;
-    private String remark;
-    private Integer recorderId;
-    /** 1=管理员已关闭该条考勤的异常提醒（删除异常记录时写入） */
-    private Integer abnormalDismissed;
+    private String enrollTime;
     private String createTime;
     private String studentName;
-    private String className;
     private String courseName;
 }

@@ -134,8 +134,9 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { getUserByIdApi } from '@/api/user'
 
 const SIDEBAR_KEY = 'xthk-sidebar-collapsed'
 
@@ -157,9 +158,13 @@ const adminSchoolMenus = [
   { path: '/home/parents', title: '家长管理', icon: '👪' },
   { path: '/home/classes', title: '班级管理', icon: '🏫' },
   { path: '/home/courses', title: '课程管理', icon: '📚' },
+  { path: '/home/course-orders', title: '课程订单管理', icon: '🛒' },
+  { path: '/home/schedules', title: '课程表管理', icon: '📅' },
   { path: '/home/progress', title: '教学进度管理', icon: '📈' },
   { path: '/home/exams', title: '考试管理', icon: '📝' },
+  { path: '/home/scores', title: '成绩管理', icon: '🏆' },
   { path: '/home/attendance', title: '考勤管理', icon: '✅' },
+  { path: '/home/abnormal-attendance', title: '异常考勤管理', icon: '⚠️' },
   { path: '/home/schedule-ai', title: 'AI 智能排课', icon: '🤖' },
   { path: '/home/learning-report', title: 'AI 学情分析', icon: '📊' }
 ]
@@ -193,11 +198,31 @@ const allRouteTitles = [
   ...headTeacherOnlyMenus
 ]
 
-const user = computed(() => {
+const user = ref(null)
+
+const loadUserFromStorage = () => {
   try {
-    return JSON.parse(localStorage.getItem('loginUser'))
+    user.value = JSON.parse(localStorage.getItem('loginUser'))
   } catch {
-    return null
+    user.value = null
+  }
+}
+
+onMounted(async () => {
+  loadUserFromStorage()
+  const current = user.value
+  if (current?.role === 'teacher' && current.id) {
+    try {
+      const res = await getUserByIdApi(current.id)
+      const fresh = res.data
+      if (fresh) {
+        const merged = { ...current, ...fresh }
+        localStorage.setItem('loginUser', JSON.stringify(merged))
+        user.value = merged
+      }
+    } catch {
+      // 刷新失败时沿用本地缓存
+    }
   }
 })
 

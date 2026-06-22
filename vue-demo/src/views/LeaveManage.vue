@@ -1,39 +1,83 @@
 <template>
   <div class="manage-page">
-    <PageSkeleton v-if="pageLoading" />
+    <PageSkeleton v-if="pageLoading" variant="cards" />
     <template v-else>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>学生</th>
-            <th>申请人</th>
-            <th>类型</th>
-            <th>开始</th>
-            <th>结束</th>
-            <th>状态</th>
-            <th>原因</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in list" :key="item.id">
-            <td>{{ item.id ?? '-' }}</td>
-            <td>{{ item.studentName ?? '-' }}</td>
-            <td>{{ item.applicantName ?? '-' }}</td>
-            <td>{{ formatCell(item.leaveType, 'leaveType') }}</td>
-            <td>{{ item.startDate ?? '-' }}</td>
-            <td>{{ item.endDate ?? '-' }}</td>
-            <td>{{ formatCell(item.status, 'leaveStatus') }}</td>
-            <td>{{ item.reason ?? '-' }}</td>
-            <td class="actions">
-              <button v-if="item.status === 0" class="btn btn-sm btn-info" @click="handleApprove(item)">审批</button>
-              <button v-else class="btn btn-sm btn-info" @click="handleView(item)">查看</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="kanban-board">
+      <div class="kanban-column kanban-column--pending">
+        <div class="kanban-column-head">
+          <span class="kanban-column-title">待审批</span>
+          <span class="kanban-column-count">{{ pendingList.length }}</span>
+        </div>
+        <div
+          v-for="item in pendingList"
+          :key="item.id"
+          class="kanban-card"
+          @click="handleApprove(item)"
+        >
+          <div class="kanban-card-title">{{ item.studentName ?? '-' }}</div>
+          <div class="kanban-card-meta">
+            {{ formatCell(item.leaveType, 'leaveType') }} · {{ item.startDate }} ~ {{ item.endDate }}<br>
+            申请人：{{ item.applicantName ?? '-' }}<br>
+            {{ item.reason || '无原因说明' }}
+          </div>
+        </div>
+      </div>
+      <div class="kanban-column kanban-column--approved">
+        <div class="kanban-column-head">
+          <span class="kanban-column-title">已通过</span>
+          <span class="kanban-column-count">{{ approvedList.length }}</span>
+        </div>
+        <div
+          v-for="item in approvedList"
+          :key="item.id"
+          class="kanban-card"
+          @click="handleView(item)"
+        >
+          <div class="kanban-card-title">{{ item.studentName ?? '-' }}</div>
+          <div class="kanban-card-meta">
+            {{ formatCell(item.leaveType, 'leaveType') }} · {{ item.startDate }} ~ {{ item.endDate }}<br>
+            申请人：{{ item.applicantName ?? '-' }}<br>
+            {{ item.reason || '无原因说明' }}
+          </div>
+        </div>
+      </div>
+      <div class="kanban-column kanban-column--rejected">
+        <div class="kanban-column-head">
+          <span class="kanban-column-title">已驳回</span>
+          <span class="kanban-column-count">{{ rejectedList.length }}</span>
+        </div>
+        <div
+          v-for="item in rejectedList"
+          :key="item.id"
+          class="kanban-card"
+          @click="handleView(item)"
+        >
+          <div class="kanban-card-title">{{ item.studentName ?? '-' }}</div>
+          <div class="kanban-card-meta">
+            {{ formatCell(item.leaveType, 'leaveType') }} · {{ item.startDate }} ~ {{ item.endDate }}<br>
+            申请人：{{ item.applicantName ?? '-' }}<br>
+            {{ item.reason || '无原因说明' }}
+          </div>
+        </div>
+      </div>
+      <div class="kanban-column kanban-column--withdrawn">
+        <div class="kanban-column-head">
+          <span class="kanban-column-title">已撤回</span>
+          <span class="kanban-column-count">{{ withdrawnList.length }}</span>
+        </div>
+        <div
+          v-for="item in withdrawnList"
+          :key="item.id"
+          class="kanban-card"
+          @click="handleView(item)"
+        >
+          <div class="kanban-card-title">{{ item.studentName ?? '-' }}</div>
+          <div class="kanban-card-meta">
+            {{ formatCell(item.leaveType, 'leaveType') }} · {{ item.startDate }} ~ {{ item.endDate }}<br>
+            申请人：{{ item.applicantName ?? '-' }}
+          </div>
+        </div>
+      </div>
     </div>
     <div v-if="dialogVisible" class="dialog-overlay" @click.self="dialogVisible = false">
       <div class="dialog">
@@ -94,10 +138,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { getLeaveListApi, updateLeaveApi } from '@/api/leave'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import { usePageLoading } from '@/composables/usePageLoading'
+import { useFormatCell } from '@/composables/useFormatCell'
+
+const { formatCell } = useFormatCell()
 
 const { pageLoading, withLoading } = usePageLoading()
 
@@ -105,6 +152,11 @@ const list = ref([])
 const dialogVisible = ref(false)
 const isApprove = ref(false)
 const loading = ref(false)
+
+const pendingList = computed(() => list.value.filter(item => item.status === 0))
+const approvedList = computed(() => list.value.filter(item => item.status === 1))
+const rejectedList = computed(() => list.value.filter(item => item.status === 2))
+const withdrawnList = computed(() => list.value.filter(item => item.status === 3))
 
 const form = reactive({
   id: null,
@@ -117,14 +169,6 @@ const form = reactive({
   status: 1,
   remark: ''
 })
-
-const formatCell = (v, type) => {
-  const m = {
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回','已撤回'][v] || '-',
-  }
-  return (m[type] ? m[type](v) : v) ?? '-'
-}
 
 const getUser = () => {
   try {
@@ -154,6 +198,10 @@ const handleView = (item) => {
 }
 
 const handleSubmit = async () => {
+  if (form.status !== 1 && form.status !== 2) {
+    alert('请选择通过或驳回')
+    return
+  }
   try {
     loading.value = true
     const user = getUser()

@@ -2,37 +2,56 @@
   <div class="manage-page">
     <PageSkeleton v-if="pageLoading" />
     <template v-else>
+    <PageIntro text="查看家长留言并及时回复，左侧列表 + 右侧详情分栏展示。" />
+    <StatCards :items="messageStats" />
     <div class="toolbar">
       <button class="btn btn-primary" @click="handleAdd">新增留言</button>
     </div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>家长</th>
-            <th>留言内容</th>
-            <th>回复</th>
-            <th>状态</th>
-            <th>留言时间</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in list" :key="item.id">
-            <td>{{ item.id ?? '-' }}</td>
-            <td>{{ item.parentName ?? '-' }}</td>
-            <td>{{ item.content ?? '-' }}</td>
-            <td>{{ item.reply ?? '-' }}</td>
-            <td>{{ formatCell(item.status, 'msgStatus') }}</td>
-            <td>{{ item.createTime ?? '-' }}</td>
-            <td class="actions">
-              <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
-              <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-if="!list.length" class="empty-tip">暂无留言</div>
+    <div v-else class="split-panel">
+      <div class="split-panel-side">
+        <div
+          v-for="item in list"
+          :key="item.id"
+          class="split-list-item"
+          :class="{ 'split-list-item--active': selectedId === item.id, 'strip-item--highlight': item.status !== 1 }"
+          @click="selectMessage(item)"
+        >
+          <div class="split-list-head">
+            <strong>{{ item.parentName ?? '家长' }}</strong>
+            <span :class="['badge', item.status === 1 ? 'badge-success' : 'badge-warning']">
+              {{ formatCell(item.status, 'msgStatus') }}
+            </span>
+          </div>
+          <div class="split-list-preview">{{ item.content ?? '-' }}</div>
+          <div style="font-size: 11px; color: #9ca3af; margin-top: 4px">{{ item.createTime ?? '-' }}</div>
+        </div>
+      </div>
+      <div class="split-panel-main">
+        <template v-if="selectedMessage">
+          <div class="message-detail-card">
+            <div class="message-detail-header">
+              <div class="message-detail-avatar">{{ (selectedMessage.parentName || '家').charAt(0) }}</div>
+              <div>
+                <div style="font-size: 18px; font-weight: 600">{{ selectedMessage.parentName ?? '家长' }}</div>
+                <div style="font-size: 13px; color: #9ca3af; margin-top: 2px">{{ selectedMessage.createTime ?? '-' }}</div>
+              </div>
+              <span :class="['badge', selectedMessage.status === 1 ? 'badge-success' : 'badge-warning']" style="margin-left: auto">
+                {{ formatCell(selectedMessage.status, 'msgStatus') }}
+              </span>
+            </div>
+            <div class="message-detail-bubble">{{ selectedMessage.content ?? '-' }}</div>
+            <div v-if="selectedMessage.reply" class="message-detail-reply">
+              <strong>回复：</strong>{{ selectedMessage.reply }}
+            </div>
+            <div class="message-detail-actions">
+              <button class="btn btn-sm btn-info" @click="handleEdit(selectedMessage)">编辑</button>
+              <button class="btn btn-sm btn-danger" @click="handleDelete(selectedMessage.id)">删除</button>
+            </div>
+          </div>
+        </template>
+        <div v-else class="empty-tip">点击左侧留言查看详情</div>
+      </div>
     </div>
     <div v-if="dialogVisible" class="dialog-overlay" @click.self="dialogVisible = false">
       <div class="dialog">
@@ -72,15 +91,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { getMessageListApi, addMessageApi, updateMessageApi, deleteMessageApi } from '@/api/message'
 import { getParentListApi } from '@/api/parent'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import PageIntro from '@/components/PageIntro.vue'
+import StatCards from '@/components/StatCards.vue'
 import { usePageLoading } from '@/composables/usePageLoading'
+import { useFormatCell } from '@/composables/useFormatCell'
+
+const { formatCell } = useFormatCell()
 
 const { pageLoading, withLoading } = usePageLoading()
 
 const list = ref([])
+const selectedId = ref(null)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const loading = ref(false)
@@ -95,29 +120,19 @@ const form = reactive({
 })
 
 
-const formatCell = (v, type) => {
-  const m = {
-    gender: v => v === 1 ? '男' : v === 2 ? '女' : '-',
-    teacherLevel: v => v === 2 ? '班主任' : v === 1 ? '任课教师' : '-',
-    status: v => v === 1 ? '正常' : '停用',
-    shelf: v => v === 1 ? '上架' : '下架',
-    annStatus: v => v === 1 ? '已发布' : '草稿',
-    role: v => ({all:'全部',admin:'管理员',teacher:'教师',parent:'家长'}[v] || v),
-    weekday: v => ['','周一','周二','周三','周四','周五','周六','周日'][v] || '-',
-    progressStatus: v => ['未开始','进行中','已完成'][v] || '-',
-    examStatus: v => ['未开始','进行中','已结束'][v] || '-',
-    attendanceStatus: v => ['','正常','迟到','早退','缺勤','请假'][v] || '-',
-    abnormalType: v => ['','','迟到','早退','缺勤'][v] || '-',
-    handleStatus: v => v === 1 ? '已处理' : '待处理',
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回'][v] || '-',
-    visitType: v => ['','上门','电话','线上'][v] || '-',
-    orderStatus: v => ['待支付','已支付','已取消'][v] || '-',
-    msgStatus: v => v === 1 ? '已回复' : '待回复',
-  }
-  return (m[type] ? m[type](v) : v) ?? '-'
+const messageStats = computed(() => [
+  { label: '留言总数', value: list.value.length, icon: '💬', tone: 'purple' },
+  { label: '待回复', value: list.value.filter(m => m.status !== 1).length, icon: '⏳', tone: 'orange' },
+  { label: '已回复', value: list.value.filter(m => m.status === 1).length, icon: '✅', tone: 'green' }
+])
+
+const selectedMessage = computed(() =>
+  list.value.find(m => m.id === selectedId.value) || null
+)
+
+const selectMessage = (item) => {
+  selectedId.value = item.id
 }
-const onCourseChange = () => {}
 
 const resetForm = () => {
   Object.assign(form, { id: null, parentId: null,
@@ -130,6 +145,9 @@ const loadList = () => withLoading(async () => {
   try {
     const res = await getMessageListApi()
     list.value = res.data || []
+    if (!selectedId.value && list.value.length) {
+      selectedId.value = list.value[0].id
+    }
   } catch (e) { alert(e.message) }
 })
 
@@ -163,6 +181,7 @@ const handleDelete = async (id) => {
   try {
     await deleteMessageApi(id)
     alert('删除成功')
+    if (selectedId.value === id) selectedId.value = null
     loadList()
   } catch (e) { alert(e.message) }
 }

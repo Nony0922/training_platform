@@ -1,42 +1,37 @@
 <template>
   <div class="manage-page">
-    <PageSkeleton v-if="pageLoading" />
+    <PageSkeleton v-if="pageLoading" variant="table" />
     <template v-else>
+    <PageIntro text="维护培训机构教师档案，条纹列表展示教师信息，便于纵向浏览。" />
+    <StatCards :items="teacherStats" />
     <div class="toolbar">
       <button class="btn btn-primary" @click="handleAdd">新增教师</button>
     </div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>姓名</th>
-            <th>性别</th>
-            <th>电话</th>
-            <th>教师级别</th>
-            <th>科目</th>
-            <th>职称</th>
-            <th>状态</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in list" :key="item.id">
-            <td>{{ item.id ?? '-' }}</td>
-            <td>{{ item.name ?? '-' }}</td>
-            <td>{{ formatCell(item.gender, 'gender') }}</td>
-            <td>{{ item.phone ?? '-' }}</td>
-            <td>{{ formatCell(item.teacherLevel, 'teacherLevel') }}</td>
-            <td>{{ item.subject ?? '-' }}</td>
-            <td>{{ item.title ?? '-' }}</td>
-            <td>{{ formatCell(item.status, 'status') }}</td>
-            <td class="actions">
-              <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
-              <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-if="!list.length" class="empty-tip">暂无教师数据</div>
+    <div v-else class="media-list">
+      <div v-for="item in list" :key="item.id" class="media-list-item">
+        <div class="avatar-badge avatar-badge--teacher">{{ (item.name || '师').charAt(0) }}</div>
+        <div class="media-list-body">
+          <div class="media-list-title">{{ item.name }}</div>
+          <div class="media-list-sub">
+            {{ item.subject || '未设置科目' }} · {{ item.title || '暂无职称' }} · {{ formatCell(item.teacherLevel, 'teacherLevel') }}
+          </div>
+          <div class="tag-list" style="margin-top: 6px">
+            <span class="tag-chip">{{ formatCell(item.gender, 'gender') }}</span>
+            <span class="tag-chip">{{ item.phone || '无电话' }}</span>
+            <span class="tag-chip">入职 {{ item.hireDate || '-' }}</span>
+          </div>
+        </div>
+        <div class="media-list-actions">
+          <span :class="['badge', item.status === 1 ? 'badge-success' : 'badge-danger']">
+            {{ formatCell(item.status, 'teacherStatus') }}
+          </span>
+          <div style="display: flex; gap: 8px; margin-top: 8px">
+            <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
+            <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div v-if="dialogVisible" class="dialog-overlay" @click.self="dialogVisible = false">
       <div class="dialog">
@@ -102,10 +97,15 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { getTeacherListApi, addTeacherApi, updateTeacherApi, deleteTeacherApi } from '@/api/teacher'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import PageIntro from '@/components/PageIntro.vue'
+import StatCards from '@/components/StatCards.vue'
 import { usePageLoading } from '@/composables/usePageLoading'
+import { useFormatCell } from '@/composables/useFormatCell'
+
+const { formatCell } = useFormatCell()
 
 const { pageLoading, withLoading } = usePageLoading()
 
@@ -115,6 +115,12 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const loading = ref(false)
 
+const teacherStats = computed(() => [
+  { label: '教师总数', value: list.value.length, icon: '👨‍🏫', tone: 'purple' },
+  { label: '任课教师', value: list.value.filter(t => t.teacherLevel === 1).length, icon: '📚', tone: 'blue' },
+  { label: '班主任', value: list.value.filter(t => t.teacherLevel === 2).length, icon: '🏫', tone: 'green' },
+  { label: '在职', value: list.value.filter(t => t.status === 1).length, icon: '✅', tone: 'orange' }
+])
 
 const form = reactive({
   id: null,
@@ -129,30 +135,6 @@ const form = reactive({
   status: 1
 })
 
-
-const formatCell = (v, type) => {
-  const m = {
-    gender: v => v === 1 ? '男' : v === 2 ? '女' : '-',
-    teacherLevel: v => v === 2 ? '班主任' : v === 1 ? '任课教师' : '-',
-    status: v => v === 1 ? '正常' : '停用',
-    shelf: v => v === 1 ? '上架' : '下架',
-    annStatus: v => v === 1 ? '已发布' : '草稿',
-    role: v => ({all:'全部',admin:'管理员',teacher:'教师',parent:'家长'}[v] || v),
-    weekday: v => ['','周一','周二','周三','周四','周五','周六','周日'][v] || '-',
-    progressStatus: v => ['未开始','进行中','已完成'][v] || '-',
-    examStatus: v => ['未开始','进行中','已结束'][v] || '-',
-    attendanceStatus: v => ['','正常','迟到','早退','缺勤','请假'][v] || '-',
-    abnormalType: v => ['','','迟到','早退','缺勤'][v] || '-',
-    handleStatus: v => v === 1 ? '已处理' : '待处理',
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回'][v] || '-',
-    visitType: v => ['','上门','电话','线上'][v] || '-',
-    orderStatus: v => ['待支付','已支付','已取消'][v] || '-',
-    msgStatus: v => v === 1 ? '已回复' : '待回复',
-  }
-  return (m[type] ? m[type](v) : v) ?? '-'
-}
-const onCourseChange = () => {}
 
 const resetForm = () => {
   Object.assign(form, { id: null, name: '',

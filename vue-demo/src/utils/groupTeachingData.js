@@ -18,21 +18,6 @@ export function groupByClass(items, { classIdKey = 'classId', classNameKey = 'cl
     }))
 }
 
-export function groupByCourse(items, { courseIdKey = 'courseId', courseNameKey = 'courseName' } = {}) {
-  const map = new Map()
-  for (const item of items || []) {
-    const courseId = item[courseIdKey] ?? 'unknown'
-    const courseName = item[courseNameKey] || '未关联课程'
-    if (!map.has(courseId)) {
-      map.set(courseId, { courseId, courseName, rows: [] })
-    }
-    map.get(courseId).rows.push(item)
-  }
-  return Array.from(map.values()).sort((a, b) =>
-    String(a.courseName).localeCompare(String(b.courseName), 'zh-CN')
-  )
-}
-
 export function groupExamsByCourseClass(items) {
   const courseMap = new Map()
   for (const item of items || []) {

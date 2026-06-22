@@ -2,7 +2,6 @@ import request from '@/utils/request'
 import { getTeacherScopeParams } from '@/composables/useTeacherScope'
 
 export const getAttendanceListApi = (mode) => request({ url: '/attendance/list', method: 'get', params: getTeacherScopeParams(mode) })
-export const getAttendanceByIdApi = (id) => request({ url: `/attendance/${id}`, method: 'get' })
 export const addAttendanceApi = (data) => request({ url: '/attendance/add', method: 'post', data })
 export const updateAttendanceApi = (data) => request({ url: '/attendance/update', method: 'put', data })
 export const deleteAttendanceApi = (id) => request({ url: `/attendance/${id}`, method: 'delete' })

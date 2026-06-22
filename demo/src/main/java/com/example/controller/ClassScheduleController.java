@@ -18,9 +18,10 @@ public class ClassScheduleController {
     @GetMapping("/list")
     public List<ClassSchedule> findAll(@RequestParam(required = false) Integer scopeUserId,
                                        @RequestParam(required = false) Integer teacherLevel,
+                                       @RequestParam(required = false) Integer scopeTeacherId,
                                        @RequestParam(required = false) String semester) {
-        if (scopeUserId != null && teacherLevel != null) {
-            return classScheduleService.findAllForTeacher(scopeUserId, teacherLevel, semester);
+        if (scopeUserId != null || scopeTeacherId != null) {
+            return classScheduleService.findAllForTeacher(scopeUserId, teacherLevel, semester, scopeTeacherId);
         }
         return classScheduleService.findAll();
     }

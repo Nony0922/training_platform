@@ -1,170 +1,200 @@
 <template>
-  <div class="manage-page">
-    <div class="toolbar">
-      <button class="btn btn-primary" @click="handleAdd">新增异常考勤</button>
-    </div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>学生</th>
-            <th>异常类型</th>
-            <th>描述</th>
-            <th>处理状态</th>
-            <th>处理结果</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in list" :key="item.id">
-            <td>{{ item.id ?? '-' }}</td>
-            <td>{{ item.studentName ?? '-' }}</td>
-            <td>{{ formatCell(item.abnormalType, 'abnormalType') }}</td>
-            <td>{{ item.description ?? '-' }}</td>
-            <td>{{ formatCell(item.handleStatus, 'handleStatus') }}</td>
-            <td>{{ item.handleResult ?? '-' }}</td>
-            <td class="actions">
-              <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
-              <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div v-if="dialogVisible" class="dialog-overlay" @click.self="dialogVisible = false">
-      <div class="dialog">
-        <div class="dialog-header">
-          <h3>{{ isEdit ? '编辑' : '新增' }}异常考勤</h3>
-          <button class="close-btn" @click="dialogVisible = false">&times;</button>
-        </div>
-        <div class="dialog-body">
-          <div class="form-item">
-            <label>学生</label>
-            <select v-model="form.studentId"><option :value="null">请选择</option><option v-for="s in students" :key="s.id" :value="s.id">{{ s.name }}</option></select>
-          </div>
-          <div class="form-item">
-            <label>考勤ID</label>
-            <input v-model="form.attendanceId" type="number" placeholder="请输入考勤ID" />
-          </div>
-          <div class="form-item">
-            <label>异常类型</label>
-            <select v-model="form.abnormalType">
-            <option :value="2">迟到</option>
-            <option :value="3">早退</option>
-            <option :value="4">缺勤</option>
-          </select>
-          </div>
-          <div class="form-item">
-            <label>描述</label>
-            <textarea v-model="form.description" placeholder="请输入描述" rows="3"></textarea>
-          </div>
-          <div class="form-item">
-            <label>处理状态</label>
-            <select v-model="form.handleStatus">
-            <option :value="0">待处理</option>
-            <option :value="1">已处理</option>
-          </select>
-          </div>
-          <div class="form-item">
-            <label>处理结果</label>
-            <input v-model="form.handleResult" type="text" placeholder="请输入处理结果" />
-          </div>
-        </div>
-        <div class="dialog-footer">
-          <button class="btn" @click="dialogVisible = false">取消</button>
-          <button class="btn btn-primary" @click="handleSubmit" :disabled="loading">{{ loading ? '提交中...' : '确定' }}</button>
+  <div class="manage-page abnormal-page">
+    <PageSkeleton v-if="pageLoading" variant="table" />
+    <template v-else>
+      <PageIntro text="考勤管理中迟到、早退、缺勤记录会自动同步至本页；对待处理记录点击「处理」填写结果，不需要的记录可「删除」。" />
+      <StatCards :items="abnormalStats" />
+
+      <div class="toolbar abnormal-toolbar">
+        <div class="filter-tabs">
+          <button
+            v-for="tab in filterTabs"
+            :key="tab.value"
+            type="button"
+            class="filter-tab"
+            :class="{ 'filter-tab--active': filter === tab.value }"
+            @click="filter = tab.value"
+          >
+            {{ tab.label }}
+            <span class="filter-tab-count">{{ tab.count }}</span>
+          </button>
         </div>
       </div>
-    </div>
+
+      <div v-if="!filteredList.length" class="empty-tip">暂无异常考勤数据</div>
+
+      <div v-else class="table-container">
+        <table class="data-table data-table--comfortable">
+          <thead>
+            <tr>
+              <th>学生</th>
+              <th>考勤日期</th>
+              <th>课程</th>
+              <th>异常类型</th>
+              <th>描述</th>
+              <th>处理状态</th>
+              <th>处理结果</th>
+              <th>处理时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in filteredList" :key="item.id">
+              <td class="cell-user-name">{{ item.studentName ?? '-' }}</td>
+              <td>{{ item.attendDate || '-' }}</td>
+              <td>{{ item.courseName || '-' }}</td>
+              <td>
+                <span :class="abnormalTypeChipClass(item.abnormalType)">
+                  {{ formatCell(item.abnormalType, 'abnormalType') }}
+                </span>
+              </td>
+              <td class="desc-cell">{{ item.description || '-' }}</td>
+              <td>
+                <span :class="['badge', Number(item.handleStatus) === 1 ? 'badge-success' : 'badge-warning']">
+                  {{ formatCell(item.handleStatus, 'handleStatus') }}
+                </span>
+              </td>
+              <td>{{ item.handleResult || '-' }}</td>
+              <td>{{ item.handleTime || '-' }}</td>
+              <td class="actions">
+                <button
+                  v-if="Number(item.handleStatus) !== 1"
+                  class="btn btn-sm btn-primary"
+                  @click="openHandle(item)"
+                >
+                  处理
+                </button>
+                <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-if="handleVisible" class="dialog-overlay" @click.self="handleVisible = false">
+        <div class="dialog">
+          <div class="dialog-header">
+            <h3>处理异常考勤</h3>
+            <button class="close-btn" @click="handleVisible = false">&times;</button>
+          </div>
+          <div class="dialog-body">
+            <div class="handle-summary">
+              <p><strong>学生：</strong>{{ handleTarget?.studentName ?? '-' }}</p>
+              <p><strong>日期：</strong>{{ handleTarget?.attendDate || '-' }} · {{ handleTarget?.courseName || '-' }}</p>
+              <p><strong>异常类型：</strong>{{ formatCell(handleTarget?.abnormalType, 'abnormalType') }}</p>
+              <p><strong>描述：</strong>{{ handleTarget?.description || '-' }}</p>
+            </div>
+            <div class="form-item">
+              <label>处理结果 *</label>
+              <textarea
+                v-model="handleResult"
+                placeholder="请填写处理情况，如：已联系家长、已补签等"
+                rows="4"
+              ></textarea>
+            </div>
+          </div>
+          <div class="dialog-footer">
+            <button class="btn" @click="handleVisible = false">取消</button>
+            <button class="btn btn-primary" :disabled="loading" @click="submitHandle">
+              {{ loading ? '提交中...' : '确认' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { getAbnormalAttendanceListApi, addAbnormalAttendanceApi, updateAbnormalAttendanceApi, deleteAbnormalAttendanceApi } from '@/api/abnormalAttendance'
-import { getStudentListApi } from '@/api/student'
+import { ref, computed, onMounted } from 'vue'
+import {
+  getAbnormalAttendanceListApi,
+  handleAbnormalAttendanceApi,
+  deleteAbnormalAttendanceApi
+} from '@/api/abnormalAttendance'
+import PageSkeleton from '@/components/PageSkeleton.vue'
+import PageIntro from '@/components/PageIntro.vue'
+import StatCards from '@/components/StatCards.vue'
+import { usePageLoading } from '@/composables/usePageLoading'
+import { useFormatCell } from '@/composables/useFormatCell'
+
+const { formatCell } = useFormatCell()
+const { pageLoading, withLoading } = usePageLoading()
 
 const list = ref([])
-const dialogVisible = ref(false)
-const isEdit = ref(false)
+const handleVisible = ref(false)
 const loading = ref(false)
-const students = ref([])
+const filter = ref('all')
+const handleTarget = ref(null)
+const handleResult = ref('')
 
-const form = reactive({
-  id: null,
-  studentId: null,
-  attendanceId: null,
-  abnormalType: 2,
-  description: '',
-  handleStatus: 0,
-  handleResult: ''
+const pendingList = computed(() => list.value.filter(a => Number(a.handleStatus) !== 1))
+const handledList = computed(() => list.value.filter(a => Number(a.handleStatus) === 1))
+
+const filteredList = computed(() => {
+  if (filter.value === 'pending') return pendingList.value
+  if (filter.value === 'handled') return handledList.value
+  return list.value
 })
 
+const filterTabs = computed(() => [
+  { label: '全部', value: 'all', count: list.value.length },
+  { label: '待处理', value: 'pending', count: pendingList.value.length },
+  { label: '已处理', value: 'handled', count: handledList.value.length }
+])
 
-const formatCell = (v, type) => {
-  const m = {
-    gender: v => v === 1 ? '男' : v === 2 ? '女' : '-',
-    teacherLevel: v => v === 2 ? '班主任' : v === 1 ? '任课教师' : '-',
-    status: v => v === 1 ? '正常' : '停用',
-    shelf: v => v === 1 ? '上架' : '下架',
-    annStatus: v => v === 1 ? '已发布' : '草稿',
-    role: v => ({all:'全部',admin:'管理员',teacher:'教师',parent:'家长'}[v] || v),
-    weekday: v => ['','周一','周二','周三','周四','周五','周六','周日'][v] || '-',
-    progressStatus: v => ['未开始','进行中','已完成'][v] || '-',
-    examStatus: v => ['未开始','进行中','已结束'][v] || '-',
-    attendanceStatus: v => ['','正常','迟到','早退','缺勤','请假'][v] || '-',
-    abnormalType: v => ['','','迟到','早退','缺勤'][v] || '-',
-    handleStatus: v => v === 1 ? '已处理' : '待处理',
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回'][v] || '-',
-    visitType: v => ['','上门','电话','线上'][v] || '-',
-    orderStatus: v => ['待支付','已支付','已取消'][v] || '-',
-    msgStatus: v => v === 1 ? '已回复' : '待回复',
+const abnormalStats = computed(() => [
+  { label: '异常总数', value: list.value.length, icon: '⚠️', tone: 'red' },
+  { label: '待处理', value: pendingList.value.length, icon: '⏳', tone: 'orange' },
+  { label: '已处理', value: handledList.value.length, icon: '✅', tone: 'green' }
+])
+
+const abnormalTypeChipClass = (type) => {
+  const map = { 2: 'tag-chip tag-chip--orange', 3: 'tag-chip tag-chip--purple', 4: 'tag-chip tag-chip--red' }
+  return map[type] || 'tag-chip'
+}
+
+const getLoginUserId = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('loginUser'))
+    return user?.id ?? null
+  } catch {
+    return null
   }
-  return (m[type] ? m[type](v) : v) ?? '-'
-}
-const onCourseChange = () => {}
-
-const resetForm = () => {
-  Object.assign(form, { id: null, studentId: null,
-  attendanceId: null,
-  abnormalType: 2,
-  description: '',
-  handleStatus: 0,
-  handleResult: '' })
 }
 
-const loadList = async () => {
+const loadList = () => withLoading(async () => {
   try {
     const res = await getAbnormalAttendanceListApi()
     list.value = res.data || []
   } catch (e) { alert(e.message) }
+})
+
+const openHandle = (item) => {
+  handleTarget.value = item
+  handleResult.value = ''
+  handleVisible.value = true
 }
 
-const handleAdd = () => {
-  isEdit.value = false
-  resetForm()
-  dialogVisible.value = true
-}
-
-const handleEdit = (item) => {
-  isEdit.value = true
-  Object.assign(form, { ...item })
-  dialogVisible.value = true
-}
-
-const handleSubmit = async () => {
-
+const submitHandle = async () => {
+  if (!handleResult.value.trim()) {
+    alert('请填写处理结果')
+    return
+  }
   try {
     loading.value = true
-    if (isEdit.value) await updateAbnormalAttendanceApi(form)
-    else await addAbnormalAttendanceApi(form)
-    alert('操作成功')
-    dialogVisible.value = false
+    await handleAbnormalAttendanceApi(handleTarget.value.id, {
+      handleResult: handleResult.value.trim(),
+      handlerId: getLoginUserId()
+    })
+    alert('处理成功')
+    handleVisible.value = false
     loadList()
-  } catch (e) { alert(e.message) }
-  finally { loading.value = false }
+  } catch (e) {
+    alert(e.message)
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleDelete = async (id) => {
@@ -176,12 +206,73 @@ const handleDelete = async (id) => {
   } catch (e) { alert(e.message) }
 }
 
-onMounted(async () => {
+onMounted(() => {
   loadList()
-  students.value = (await getStudentListApi()).data || []
 })
 </script>
 
 <style scoped>
 @import '@/assets/manage.css';
+
+.abnormal-page :deep(.data-table) {
+  font-size: 13px;
+}
+
+.abnormal-page :deep(.data-table th) {
+  font-size: 12px;
+  padding: 10px 12px;
+}
+
+.abnormal-page :deep(.data-table td) {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.abnormal-page :deep(.cell-user-name) {
+  font-size: 13px;
+}
+
+.abnormal-page :deep(.tag-chip) {
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+.abnormal-page :deep(.badge) {
+  font-size: 12px;
+  padding: 3px 8px;
+}
+
+.abnormal-page :deep(.btn-sm) {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+.desc-cell {
+  max-width: 200px;
+  font-size: 12px;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.45;
+  color: #6b7280;
+}
+
+.handle-summary {
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border-left: 3px solid #7c3aed;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #374151;
+}
+
+.handle-summary p {
+  margin: 0 0 6px;
+}
+
+.handle-summary p:last-child {
+  margin-bottom: 0;
+}
 </style>

@@ -2,48 +2,53 @@
   <div class="manage-page">
     <PageSkeleton v-if="pageLoading" />
     <template v-else>
-    <div class="page-desc">
-      <p>管理系统用户账号及角色权限，支持新增、编辑、删除用户，并分配管理员、教师（任课教师 / 班主任）、家长等角色。</p>
-    </div>
+    <PageIntro text="管理系统用户账号及角色权限，支持新增、编辑、删除用户，并分配管理员、教师（任课教师 / 班主任）、家长等角色。" />
+    <StatCards :items="stats" />
     <div class="toolbar">
       <button class="btn btn-primary" @click="handleAdd">新增用户</button>
     </div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>用户名</th>
-            <th>姓名</th>
-            <th>角色</th>
-            <th>教师级别</th>
-            <th>电话</th>
-            <th>状态</th>
-            <th>创建时间</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in list" :key="item.id">
-            <td>{{ item.id }}</td>
-            <td>{{ item.username }}</td>
-            <td>{{ item.name }}</td>
-            <td>{{ formatRole(item.role) }}</td>
-            <td>{{ formatTeacherLevel(item) }}</td>
-            <td>{{ item.phone || '-' }}</td>
-            <td>
+    <div class="role-tabs">
+      <button
+        v-for="tab in roleTabs"
+        :key="tab.value"
+        type="button"
+        class="role-tab"
+        :class="{ 'role-tab--active': roleFilter === tab.value }"
+        @click="roleFilter = tab.value"
+      >
+        {{ tab.label }} ({{ tab.count }})
+      </button>
+    </div>
+    <div v-if="!filteredList.length" class="empty-tip">暂无用户数据</div>
+    <div v-else class="card-grid">
+      <div v-for="item in filteredList" :key="item.id" class="entity-card">
+        <div class="profile-card">
+          <div :class="['avatar-badge', `avatar-badge--${item.role}`]">{{ roleInitial(item) }}</div>
+          <div class="profile-card-main">
+            <div class="entity-card-head" style="margin-bottom: 0">
+              <div>
+                <h3 class="entity-card-title">{{ item.name }}</h3>
+                <p class="entity-card-sub">@{{ item.username }}</p>
+              </div>
               <span :class="['badge', item.status === 1 ? 'badge-success' : 'badge-danger']">
                 {{ item.status === 1 ? '启用' : '禁用' }}
               </span>
-            </td>
-            <td>{{ item.createTime || '-' }}</td>
-            <td class="actions">
-              <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
-              <button class="btn btn-sm btn-danger" @click="handleDelete(item)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+            <div class="tag-list">
+              <span class="tag-chip tag-chip--purple">{{ formatRole(item.role) }}</span>
+              <span v-if="item.role === 'teacher'" class="tag-chip">{{ formatTeacherLevel(item) }}</span>
+            </div>
+            <div class="entity-card-body" style="margin-top: 10px">
+              <div class="info-row"><span class="info-row-label">电话</span><span class="info-row-value">{{ item.phone || '-' }}</span></div>
+              <div class="info-row"><span class="info-row-label">创建</span><span class="info-row-value">{{ item.createTime || '-' }}</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="entity-card-foot">
+          <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
+          <button class="btn btn-sm btn-danger" @click="handleDelete(item)">删除</button>
+        </div>
+      </div>
     </div>
     <div v-if="dialogVisible" class="dialog-overlay" @click.self="dialogVisible = false">
       <div class="dialog">
@@ -108,14 +113,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { getUserListApi, addUserApi, updateUserApi, deleteUserApi } from '@/api/user'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import PageIntro from '@/components/PageIntro.vue'
+import StatCards from '@/components/StatCards.vue'
 import { usePageLoading } from '@/composables/usePageLoading'
 
 const { pageLoading, withLoading } = usePageLoading()
 
 const list = ref([])
+const roleFilter = ref('all')
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const loading = ref(false)
@@ -149,6 +157,32 @@ const formatTeacherLevel = (item) => {
   if (item.role !== 'teacher') return '-'
   return item.teacherLevel === 2 ? '班主任' : '任课教师'
 }
+
+const roleInitial = (item) => {
+  if (item.role === 'admin') return '管'
+  if (item.role === 'teacher') return '师'
+  if (item.role === 'parent') return '家'
+  return (item.name || '?').charAt(0)
+}
+
+const stats = computed(() => [
+  { label: '用户总数', value: list.value.length, icon: '👥', tone: 'purple' },
+  { label: '管理员', value: list.value.filter(u => u.role === 'admin').length, icon: '🔐', tone: 'blue' },
+  { label: '教师', value: list.value.filter(u => u.role === 'teacher').length, icon: '👨‍🏫', tone: 'green' },
+  { label: '家长', value: list.value.filter(u => u.role === 'parent').length, icon: '👪', tone: 'orange' }
+])
+
+const roleTabs = computed(() => [
+  { value: 'all', label: '全部', count: list.value.length },
+  { value: 'admin', label: '管理员', count: list.value.filter(u => u.role === 'admin').length },
+  { value: 'teacher', label: '教师', count: list.value.filter(u => u.role === 'teacher').length },
+  { value: 'parent', label: '家长', count: list.value.filter(u => u.role === 'parent').length }
+])
+
+const filteredList = computed(() => {
+  if (roleFilter.value === 'all') return list.value
+  return list.value.filter(u => u.role === roleFilter.value)
+})
 
 const resetForm = () => {
   Object.assign(form, {
@@ -260,18 +294,4 @@ onMounted(loadList)
 
 <style scoped>
 @import '@/assets/manage.css';
-
-.page-desc {
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  background: #f5f3ff;
-  border-radius: 8px;
-  border-left: 4px solid #7c3aed;
-}
-
-.page-desc p {
-  margin: 0;
-  color: #4b5563;
-  font-size: 14px;
-}
 </style>

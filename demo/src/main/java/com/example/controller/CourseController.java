@@ -17,9 +17,10 @@ public class CourseController {
 
     @GetMapping("/list")
     public List<Course> findAll(@RequestParam(required = false) Integer scopeUserId,
-                                @RequestParam(required = false) Integer teacherLevel) {
-        if (scopeUserId != null && teacherLevel != null) {
-            return courseService.findAllForTeacher(scopeUserId, teacherLevel);
+                                @RequestParam(required = false) Integer teacherLevel,
+                                @RequestParam(required = false) Integer scopeTeacherId) {
+        if (scopeUserId != null || scopeTeacherId != null) {
+            return courseService.findAllForTeacher(scopeUserId, teacherLevel, scopeTeacherId);
         }
         return courseService.findAll();
     }

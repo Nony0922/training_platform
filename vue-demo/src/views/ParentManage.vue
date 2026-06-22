@@ -1,38 +1,36 @@
 <template>
   <div class="manage-page">
-    <PageSkeleton v-if="pageLoading" />
+    <PageSkeleton v-if="pageLoading" variant="cards" />
     <template v-else>
+    <PageIntro text="维护家长联系信息，便于家校沟通与课程报名关联。" />
+    <StatCards :items="parentStats" />
     <div v-if="!readOnly" class="toolbar">
       <button class="btn btn-primary" @click="handleAdd">新增家长</button>
     </div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>姓名</th>
-            <th>电话</th>
-            <th>邮箱</th>
-            <th>地址</th>
-            <th>创建时间</th>
-            <th v-if="!readOnly">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in list" :key="item.id">
-            <td>{{ item.id ?? '-' }}</td>
-            <td>{{ item.name ?? '-' }}</td>
-            <td>{{ item.phone ?? '-' }}</td>
-            <td>{{ item.email ?? '-' }}</td>
-            <td>{{ item.address ?? '-' }}</td>
-            <td>{{ item.createTime ?? '-' }}</td>
-            <td v-if="!readOnly" class="actions">
-              <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
-              <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-if="!list.length" class="empty-tip">暂无家长数据</div>
+    <div v-else class="card-grid">
+      <div v-for="item in list" :key="item.id" class="entity-card">
+        <div class="profile-card">
+          <div class="avatar-badge avatar-badge--parent">{{ (item.name || '家').charAt(0) }}</div>
+          <div class="profile-card-main">
+            <div class="entity-card-head" style="margin-bottom: 0">
+              <div>
+                <h3 class="entity-card-title">{{ item.name ?? '-' }}</h3>
+                <p class="entity-card-sub">{{ item.phone ?? '-' }}</p>
+              </div>
+            </div>
+            <div class="entity-card-body" style="margin-top: 10px">
+              <div class="info-row"><span class="info-row-label">邮箱</span><span class="info-row-value">{{ item.email || '-' }}</span></div>
+              <div class="info-row"><span class="info-row-label">地址</span><span class="info-row-value">{{ item.address || '-' }}</span></div>
+              <div class="info-row"><span class="info-row-label">创建</span><span class="info-row-value">{{ item.createTime || '-' }}</span></div>
+            </div>
+          </div>
+        </div>
+        <div v-if="!readOnly" class="entity-card-foot">
+          <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
+          <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
+        </div>
+      </div>
     </div>
     <div v-if="!readOnly && dialogVisible" class="dialog-overlay" @click.self="dialogVisible = false">
       <div class="dialog">
@@ -69,22 +67,26 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { getParentListApi, addParentApi, updateParentApi, deleteParentApi } from '@/api/parent'
 import { useReadOnly } from '@/composables/useReadOnly'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import PageIntro from '@/components/PageIntro.vue'
+import StatCards from '@/components/StatCards.vue'
 import { usePageLoading } from '@/composables/usePageLoading'
 
 const { pageLoading, withLoading } = usePageLoading()
 
 const readOnly = useReadOnly()
 
-
 const list = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const loading = ref(false)
 
+const parentStats = computed(() => [
+  { label: '家长总数', value: list.value.length, icon: '👨‍👩‍👧', tone: 'purple' }
+])
 
 const form = reactive({
   id: null,
@@ -93,31 +95,6 @@ const form = reactive({
   email: '',
   address: ''
 })
-
-
-const formatCell = (v, type) => {
-  const m = {
-    gender: v => v === 1 ? '男' : v === 2 ? '女' : '-',
-    teacherLevel: v => v === 2 ? '班主任' : v === 1 ? '任课教师' : '-',
-    status: v => v === 1 ? '正常' : '停用',
-    shelf: v => v === 1 ? '上架' : '下架',
-    annStatus: v => v === 1 ? '已发布' : '草稿',
-    role: v => ({all:'全部',admin:'管理员',teacher:'教师',parent:'家长'}[v] || v),
-    weekday: v => ['','周一','周二','周三','周四','周五','周六','周日'][v] || '-',
-    progressStatus: v => ['未开始','进行中','已完成'][v] || '-',
-    examStatus: v => ['未开始','进行中','已结束'][v] || '-',
-    attendanceStatus: v => ['','正常','迟到','早退','缺勤','请假'][v] || '-',
-    abnormalType: v => ['','','迟到','早退','缺勤'][v] || '-',
-    handleStatus: v => v === 1 ? '已处理' : '待处理',
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回'][v] || '-',
-    visitType: v => ['','上门','电话','线上'][v] || '-',
-    orderStatus: v => ['待支付','已支付','已取消'][v] || '-',
-    msgStatus: v => v === 1 ? '已回复' : '待回复',
-  }
-  return (m[type] ? m[type](v) : v) ?? '-'
-}
-const onCourseChange = () => {}
 
 const resetForm = () => {
   Object.assign(form, { id: null, name: '',

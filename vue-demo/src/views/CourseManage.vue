@@ -1,42 +1,36 @@
 <template>
   <div class="manage-page">
-    <PageSkeleton v-if="pageLoading" />
+    <PageSkeleton v-if="pageLoading" variant="cards" />
     <template v-else>
     <div v-if="!readOnly" class="toolbar">
       <button class="btn btn-primary" @click="handleAdd">新增课程</button>
     </div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>课程名称</th>
-            <th>适用年级</th>
-            <th>授课方式</th>
-            <th>任课教师</th>
-            <th>学时</th>
-            <th>费用</th>
-            <th>状态</th>
-            <th v-if="!readOnly">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in list" :key="item.id">
-            <td>{{ item.id ?? '-' }}</td>
-            <td>{{ item.name ?? '-' }}</td>
-            <td>{{ item.targetGrade ?? '-' }}</td>
-            <td>{{ formatCell(item.teachMode, 'teachMode') }}</td>
-            <td>{{ item.teacherName ?? '-' }}</td>
-            <td>{{ item.hours ?? '-' }}</td>
-            <td>{{ item.fee ?? '-' }}</td>
-            <td>{{ formatCell(item.status, 'shelf') }}</td>
-            <td v-if="!readOnly" class="actions">
-              <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
-              <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-if="!list.length" class="empty-tip">暂无课程数据</div>
+    <div v-else class="catalog-list">
+      <div v-for="item in list" :key="item.id" class="catalog-item">
+        <div class="catalog-accent" />
+        <div class="catalog-body">
+          <h3 class="catalog-title">{{ item.name ?? '-' }}</h3>
+          <div class="catalog-meta">
+            <span>{{ item.targetGrade || '全年级' }}</span>
+            <span>{{ item.subject || '综合' }}</span>
+            <span>{{ formatCell(item.teachMode, 'teachMode') }}</span>
+            <span>教师：{{ item.teacherName ?? '-' }}</span>
+            <span>{{ item.hours ?? '-' }} 学时</span>
+          </div>
+          <p v-if="item.description" class="catalog-desc">{{ item.description }}</p>
+        </div>
+        <div class="catalog-side">
+          <span :class="['badge', item.status === 1 ? 'badge-success' : 'badge-warning']">
+            {{ formatCell(item.status, 'shelf') }}
+          </span>
+          <div class="catalog-price">¥{{ item.fee ?? 0 }}</div>
+          <div v-if="!readOnly" style="display: flex; gap: 6px">
+            <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
+            <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div v-if="!readOnly && dialogVisible" class="dialog-overlay" @click.self="dialogVisible = false">
       <div class="dialog">
@@ -54,8 +48,9 @@
             <textarea v-model="form.description" placeholder="请输入课程介绍" rows="3"></textarea>
           </div>
           <div class="form-item">
-            <label>任课教师</label>
-            <select v-model="form.teacherId"><option :value="null">请选择</option><option v-for="t in teachers" :key="t.id" :value="t.id">{{ t.name }}</option></select>
+            <label>任课教师 *</label>
+            <select v-model="form.teacherId"><option :value="null">请选择</option><option v-for="t in linkedTeachers" :key="t.id" :value="t.id">{{ t.name }}</option></select>
+            <p v-if="!readOnly" class="form-hint">仅显示已绑定登录账号的教师，新增后对应教师可在「我的课程」中查看</p>
           </div>
           <div class="form-item">
             <label>适用年级</label>
@@ -132,15 +127,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { getCourseListApi, addCourseApi, updateCourseApi, deleteCourseApi } from '@/api/course'
 import { getTeacherListApi } from '@/api/teacher'
 import { useReadOnly } from '@/composables/useReadOnly'
+import { getScopeModeFromRoute } from '@/composables/useTeacherScope'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import { usePageLoading } from '@/composables/usePageLoading'
+import { useFormatCell } from '@/composables/useFormatCell'
+
+const { formatCell } = useFormatCell()
 
 const { pageLoading, withLoading } = usePageLoading()
 
+const route = useRoute()
 const readOnly = useReadOnly()
 
 const list = ref([])
@@ -148,6 +149,8 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const loading = ref(false)
 const teachers = ref([])
+
+const linkedTeachers = computed(() => teachers.value.filter(t => t.userId != null))
 
 const form = reactive({
   id: null,
@@ -169,32 +172,6 @@ const form = reactive({
   fee: 0,
   status: 1
 })
-
-
-const formatCell = (v, type) => {
-  const m = {
-    gender: v => v === 1 ? '男' : v === 2 ? '女' : '-',
-    teacherLevel: v => v === 2 ? '班主任' : v === 1 ? '任课教师' : '-',
-    status: v => v === 1 ? '正常' : '停用',
-    shelf: v => v === 1 ? '上架' : '下架',
-    annStatus: v => v === 1 ? '已发布' : '草稿',
-    role: v => ({all:'全部',admin:'管理员',teacher:'教师',parent:'家长'}[v] || v),
-    weekday: v => ['','周一','周二','周三','周四','周五','周六','周日'][v] || '-',
-    progressStatus: v => ['未开始','进行中','已完成'][v] || '-',
-    examStatus: v => ['未开始','进行中','已结束'][v] || '-',
-    attendanceStatus: v => ['','正常','迟到','早退','缺勤','请假'][v] || '-',
-    abnormalType: v => ['','','迟到','早退','缺勤'][v] || '-',
-    handleStatus: v => v === 1 ? '已处理' : '待处理',
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回'][v] || '-',
-    visitType: v => ['','上门','电话','线上'][v] || '-',
-    orderStatus: v => ['待支付','已支付','已取消'][v] || '-',
-    teachMode: v => ['','线下授课','线上直播','线上线下混合'][v] || '-',
-    msgStatus: v => v === 1 ? '已回复' : '待回复',
-  }
-  return (m[type] ? m[type](v) : v) ?? '-'
-}
-const onCourseChange = () => {}
 
 const resetForm = () => {
   Object.assign(form, { id: null, name: '',
@@ -218,7 +195,7 @@ const resetForm = () => {
 
 const loadList = () => withLoading(async () => {
   try {
-    const res = await getCourseListApi()
+    const res = await getCourseListApi(getScopeModeFromRoute(route))
     list.value = res.data || []
   } catch (e) { alert(e.message) }
 })
@@ -237,6 +214,7 @@ const handleEdit = (item) => {
 
 const handleSubmit = async () => {
   if (!form.name) { alert('请填写课程名称'); return }
+  if (!form.teacherId) { alert('请选择任课教师，否则教师端无法查看该课程'); return }
   try {
     loading.value = true
     if (isEdit.value) await updateCourseApi(form)

@@ -11,4 +11,5 @@ public interface ScoreMapper {
     int insert(Score entity);
     int update(Score entity);
     int deleteById(Integer id);
+    int countByExamAndStudent(Integer examId, Integer studentId, Integer excludeId);
 }

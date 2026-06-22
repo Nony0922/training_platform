@@ -9,7 +9,42 @@
     <update id="update">
         UPDATE attendance SET student_id=#{studentId}, class_id=#{classId}, course_id=#{courseId}, attend_date=#{attendDate}, status=#{status}, remark=#{remark}, recorder_id=#{recorderId} WHERE id = #{id}
     </update>
+    <update id="updateAbnormalDismissed">
+        UPDATE attendance SET abnormal_dismissed = #{abnormalDismissed} WHERE id = #{id}
+    </update>
     <delete id="deleteById">
         DELETE FROM attendance WHERE id = #{id}
     </delete>
+    <select id="findByStudentClassDate" resultType="com.example.entity.Attendance">
+        SELECT a.*, st.name AS student_name, cl.name AS class_name, co.name AS course_name
+        FROM attendance a
+        LEFT JOIN student st ON a.student_id = st.id
+        LEFT JOIN clazz cl ON a.class_id = cl.id
+        LEFT JOIN course co ON a.course_id = co.id
+        WHERE a.student_id = #{studentId} AND a.class_id = #{classId} AND a.attend_date = #{attendDate}
+          AND a.course_id IS NULL
+        LIMIT 1
+    </select>
+    <select id="findByStudentAndDate" resultType="com.example.entity.Attendance">
+        SELECT a.*, st.name AS student_name, cl.name AS class_name, co.name AS course_name
+        FROM attendance a
+        LEFT JOIN student st ON a.student_id = st.id
+        LEFT JOIN clazz cl ON a.class_id = cl.id
+        LEFT JOIN course co ON a.course_id = co.id
+        WHERE a.student_id = #{studentId} AND a.attend_date = #{attendDate}
+        ORDER BY a.course_id IS NULL, a.course_id
+    </select>
+    <delete id="deleteClassLevelByStudentAndDate">
+        DELETE FROM attendance
+        WHERE student_id = #{studentId} AND attend_date = #{attendDate} AND course_id IS NULL
+    </delete>
+    <select id="countByStudentCourseDate" resultType="int">
+        SELECT COUNT(*) FROM attendance
+        WHERE student_id = #{studentId} AND attend_date = #{attendDate}
+        <choose>
+            <when test="courseId == null">AND course_id IS NULL</when>
+            <otherwise>AND course_id = #{courseId}</otherwise>
+        </choose>
+        <if test="excludeId != null">AND id != #{excludeId}</if>
+    </select>
 </mapper>

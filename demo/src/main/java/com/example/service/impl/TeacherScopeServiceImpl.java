@@ -33,6 +33,17 @@ public class TeacherScopeServiceImpl implements TeacherScopeService {
 
     @Override
     public Integer resolveTeacherId(Integer userId) {
+        return resolveTeacherId(userId, null);
+    }
+
+    @Override
+    public Integer resolveTeacherId(Integer userId, Integer scopeTeacherId) {
+        if (scopeTeacherId != null) {
+            Teacher byId = teacherMapper.findById(scopeTeacherId);
+            if (byId != null && userId != null && java.util.Objects.equals(byId.getUserId(), userId)) {
+                return scopeTeacherId;
+            }
+        }
         Teacher teacher = teacherMapper.findByUserId(userId);
         return teacher != null ? teacher.getId() : null;
     }

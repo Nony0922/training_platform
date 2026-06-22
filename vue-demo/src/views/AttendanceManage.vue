@@ -2,6 +2,7 @@
   <div class="manage-page">
     <PageSkeleton v-if="pageLoading" variant="grouped" />
     <template v-else>
+    <PageIntro text="按课程与班级查看考勤记录，状态以标签芯片形式展示，便于快速浏览。" />
     <div class="toolbar">
       <button class="btn btn-primary" @click="handleAdd">新增考勤</button>
     </div>
@@ -17,30 +18,14 @@
           <span class="subgroup-title">{{ klass.className }}</span>
           <span class="subgroup-meta">{{ klass.rows.length }} 条</span>
         </div>
-        <div class="table-container">
-          <table class="data-table group-table">
-            <thead>
-              <tr>
-                <th>学生</th>
-                <th>日期</th>
-                <th>状态</th>
-                <th>备注</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in klass.rows" :key="item.id">
-                <td>{{ item.studentName ?? '-' }}</td>
-                <td>{{ item.attendDate ?? '-' }}</td>
-                <td>{{ formatCell(item.status, 'attendanceStatus') }}</td>
-                <td>{{ item.remark ?? '-' }}</td>
-                <td class="actions">
-                  <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
-                  <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="chip-grid">
+          <div v-for="item in klass.rows" :key="item.id" class="attendance-chip">
+            <span class="attendance-chip-name">{{ item.studentName ?? '-' }}</span>
+            <span class="tag-chip" :class="attendanceChipClass(item.status)">{{ formatCell(item.status, 'attendanceStatus') }}</span>
+            <span style="font-size: 12px; color: #9ca3af">{{ item.attendDate ?? '-' }}</span>
+            <button class="btn btn-sm btn-info" style="margin-left: auto" @click="handleEdit(item)">编辑</button>
+            <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
+          </div>
         </div>
       </div>
     </div>
@@ -62,7 +47,7 @@
           </div>
           <div class="form-item">
             <label>课程</label>
-            <select v-model="form.courseId" @change="onCourseChange"><option :value="null">请选择</option><option v-for="c in courses" :key="c.id" :value="c.id">{{ c.name }}</option></select>
+            <select v-model="form.courseId"><option :value="null">请选择</option><option v-for="c in courses" :key="c.id" :value="c.id">{{ c.name }}</option></select>
           </div>
           <div class="form-item">
             <label>日期</label>
@@ -102,11 +87,14 @@ import { getCourseListApi } from '@/api/course'
 import { getScopeModeFromRoute } from '@/composables/useTeacherScope'
 import { groupAttendanceByCourseClass } from '@/utils/groupTeachingData'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import PageIntro from '@/components/PageIntro.vue'
 import { usePageLoading } from '@/composables/usePageLoading'
+import { useFormatCell } from '@/composables/useFormatCell'
 
 const route = useRoute()
 const scopeMode = () => getScopeModeFromRoute(route)
 const { pageLoading, withLoading } = usePageLoading()
+const { formatCell } = useFormatCell()
 
 const list = ref([])
 const dialogVisible = ref(false)
@@ -132,29 +120,11 @@ const form = reactive({
 })
 
 
-const formatCell = (v, type) => {
-  const m = {
-    gender: v => v === 1 ? '男' : v === 2 ? '女' : '-',
-    teacherLevel: v => v === 2 ? '班主任' : v === 1 ? '任课教师' : '-',
-    status: v => v === 1 ? '正常' : '停用',
-    shelf: v => v === 1 ? '上架' : '下架',
-    annStatus: v => v === 1 ? '已发布' : '草稿',
-    role: v => ({all:'全部',admin:'管理员',teacher:'教师',parent:'家长'}[v] || v),
-    weekday: v => ['','周一','周二','周三','周四','周五','周六','周日'][v] || '-',
-    progressStatus: v => ['未开始','进行中','已完成'][v] || '-',
-    examStatus: v => ['未开始','进行中','已结束'][v] || '-',
-    attendanceStatus: v => ['','正常','迟到','早退','缺勤','请假'][v] || '-',
-    abnormalType: v => ['','','迟到','早退','缺勤'][v] || '-',
-    handleStatus: v => v === 1 ? '已处理' : '待处理',
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回'][v] || '-',
-    visitType: v => ['','上门','电话','线上'][v] || '-',
-    orderStatus: v => ['待支付','已支付','已取消'][v] || '-',
-    msgStatus: v => v === 1 ? '已回复' : '待回复',
-  }
-  return (m[type] ? m[type](v) : v) ?? '-'
+const attendanceChipClass = (status) => {
+  if (status === 1) return 'tag-chip--green'
+  if (status === 5) return 'tag-chip--purple'
+  return 'tag-chip--orange'
 }
-const onCourseChange = () => {}
 
 const resetForm = () => {
   Object.assign(form, { id: null, studentId: null,

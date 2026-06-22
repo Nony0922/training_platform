@@ -5,8 +5,6 @@ import com.example.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -63,7 +61,11 @@ public class ParentAppServiceImpl implements ParentAppService {
 
     @Override
     public Course getCourseDetail(Integer id) {
-        return courseService.findById(id);
+        Course course = courseService.findById(id);
+        if (course == null || course.getStatus() == null || course.getStatus() != 1) {
+            return null;
+        }
+        return course;
     }
 
     @Override
@@ -147,6 +149,28 @@ public class ParentAppServiceImpl implements ParentAppService {
             result.put("code", 500);
             result.put("msg", err);
             return result;
+        }
+        if (order.getParentId() != null) {
+            String gradeErr = courseService.validateGradeForParent(course, order.getParentId());
+            if (gradeErr != null) {
+                result.put("code", 500);
+                result.put("msg", gradeErr);
+                return result;
+            }
+            boolean pendingExists = courseOrderService.findAll().stream()
+                    .anyMatch(o -> order.getParentId().equals(o.getParentId())
+                            && order.getCourseId().equals(o.getCourseId())
+                            && o.getStatus() != null && o.getStatus() == 0);
+            if (pendingExists) {
+                result.put("code", 500);
+                result.put("msg", "该课程已有待支付订单，请先完成支付或取消后再下单");
+                return result;
+            }
+            if (courseOrderService.hasActiveEnrollment(order.getParentId(), order.getCourseId())) {
+                result.put("code", 500);
+                result.put("msg", "您的孩子已选过该课程，无需重复购买");
+                return result;
+            }
         }
         if (order.getOrderNo() == null || order.getOrderNo().isEmpty()) {
             order.setOrderNo("ORD" + System.currentTimeMillis());
@@ -240,46 +264,28 @@ public class ParentAppServiceImpl implements ParentAppService {
             return result;
         }
         leave.setStatus(3);
-        int r = leaveRequestService.update(leave);
-        result.put("code", r > 0 ? 200 : 500);
-        result.put("msg", r > 0 ? "撤回成功" : "撤回失败");
+        try {
+            int r = leaveRequestService.update(leave);
+            result.put("code", r > 0 ? 200 : 500);
+            result.put("msg", r > 0 ? "撤回成功" : "撤回失败");
+        } catch (com.example.exception.BusinessException ex) {
+            result.put("code", 500);
+            result.put("msg", ex.getMessage());
+        }
         return result;
     }
 
     @Override
     public Map<String, Object> payOrder(Integer orderId) {
         Map<String, Object> result = new HashMap<>();
-        CourseOrder order = courseOrderService.findById(orderId);
-        if (order == null) {
-            result.put("code", 500);
-            result.put("msg", "订单不存在");
-            return result;
-        }
-        if (order.getStatus() != null && order.getStatus() == 1) {
-            result.put("code", 500);
-            result.put("msg", "订单已支付");
-            return result;
-        }
-        if (order.getStatus() == null || order.getStatus() != 0) {
-            result.put("code", 500);
-            result.put("msg", "订单状态不可支付");
-            return result;
-        }
-        Course course = courseService.findById(order.getCourseId());
-        String err = courseService.validatePurchasable(course);
+        String err = courseOrderService.applyPaid(orderId);
         if (err != null) {
             result.put("code", 500);
             result.put("msg", err);
             return result;
         }
-        order.setStatus(1);
-        order.setPayTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        int r = courseOrderService.update(order);
-        if (r > 0) {
-            courseService.incrementEnrolledCount(order.getCourseId());
-        }
-        result.put("code", r > 0 ? 200 : 500);
-        result.put("msg", r > 0 ? "支付成功" : "支付失败");
+        result.put("code", 200);
+        result.put("msg", "支付成功");
         return result;
     }
 

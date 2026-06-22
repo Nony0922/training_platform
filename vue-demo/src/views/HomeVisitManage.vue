@@ -2,37 +2,30 @@
   <div class="manage-page">
     <PageSkeleton v-if="pageLoading" variant="table" />
     <template v-else>
+    <PageIntro text="记录并维护学生家访情况，按时间线卡片展示家访方式、内容与反馈。" />
     <div class="toolbar">
       <button class="btn btn-primary" @click="handleAdd">新增家访记录</button>
     </div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>学生</th>
-            <th>教师</th>
-            <th>家访日期</th>
-            <th>方式</th>
-            <th>内容</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in list" :key="item.id">
-            <td>{{ item.id ?? '-' }}</td>
-            <td>{{ item.studentName ?? '-' }}</td>
-            <td>{{ item.teacherName ?? '-' }}</td>
-            <td>{{ item.visitDate ?? '-' }}</td>
-            <td>{{ formatCell(item.visitType, 'visitType') }}</td>
-            <td>{{ item.content ?? '-' }}</td>
-            <td class="actions">
-              <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
-              <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-if="!list.length" class="empty-tip">暂无家访记录</div>
+    <div v-else class="timeline-list">
+      <div v-for="item in list" :key="item.id" class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-body">
+          <div class="entity-card-head" style="margin-bottom: 8px">
+            <div>
+              <h3 class="entity-card-title">{{ item.studentName ?? '-' }}</h3>
+              <p class="entity-card-sub">{{ item.visitDate ?? '-' }} · {{ formatCell(item.visitType, 'visitType') }}</p>
+            </div>
+            <span class="tag-chip tag-chip--purple">{{ item.teacherName ?? '-' }}</span>
+          </div>
+          <p style="margin: 0 0 8px; font-size: 14px; color: #374151; line-height: 1.6">{{ item.content || '暂无内容' }}</p>
+          <p v-if="item.feedback" style="margin: 0; font-size: 13px; color: #6b7280">家长反馈：{{ item.feedback }}</p>
+          <div class="entity-card-foot" style="border-top: none; padding-top: 10px; margin-top: 8px">
+            <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
+            <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
+          </div>
+        </div>
+      </div>
     </div>
     </template>
     <div v-if="dialogVisible" class="dialog-overlay" @click.self="dialogVisible = false">
@@ -90,9 +83,12 @@ import { getHomeVisitListApi, addHomeVisitApi, updateHomeVisitApi, deleteHomeVis
 import { getStudentListApi } from '@/api/student'
 import { getTeacherListApi } from '@/api/teacher'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import PageIntro from '@/components/PageIntro.vue'
 import { usePageLoading } from '@/composables/usePageLoading'
+import { useFormatCell } from '@/composables/useFormatCell'
 
 const { pageLoading, withLoading } = usePageLoading()
+const { formatCell } = useFormatCell()
 
 const list = ref([])
 const dialogVisible = ref(false)
@@ -121,30 +117,6 @@ const form = reactive({
   nextPlan: ''
 })
 
-
-const formatCell = (v, type) => {
-  const m = {
-    gender: v => v === 1 ? '男' : v === 2 ? '女' : '-',
-    teacherLevel: v => v === 2 ? '班主任' : v === 1 ? '任课教师' : '-',
-    status: v => v === 1 ? '正常' : '停用',
-    shelf: v => v === 1 ? '上架' : '下架',
-    annStatus: v => v === 1 ? '已发布' : '草稿',
-    role: v => ({all:'全部',admin:'管理员',teacher:'教师',parent:'家长'}[v] || v),
-    weekday: v => ['','周一','周二','周三','周四','周五','周六','周日'][v] || '-',
-    progressStatus: v => ['未开始','进行中','已完成'][v] || '-',
-    examStatus: v => ['未开始','进行中','已结束'][v] || '-',
-    attendanceStatus: v => ['','正常','迟到','早退','缺勤','请假'][v] || '-',
-    abnormalType: v => ['','','迟到','早退','缺勤'][v] || '-',
-    handleStatus: v => v === 1 ? '已处理' : '待处理',
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回'][v] || '-',
-    visitType: v => ['','上门','电话','线上'][v] || '-',
-    orderStatus: v => ['待支付','已支付','已取消'][v] || '-',
-    msgStatus: v => v === 1 ? '已回复' : '待回复',
-  }
-  return (m[type] ? m[type](v) : v) ?? '-'
-}
-const onCourseChange = () => {}
 
 const resetForm = () => {
   Object.assign(form, { id: null, studentId: null,

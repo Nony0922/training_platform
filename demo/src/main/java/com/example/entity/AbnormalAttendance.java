@@ -19,4 +19,8 @@ public class AbnormalAttendance {
     private String handleTime;
     private String createTime;
     private String studentName;
+    /** 关联考勤日期（查询展示） */
+    private String attendDate;
+    /** 关联课程名称（查询展示） */
+    private String courseName;
 }

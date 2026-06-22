@@ -12,4 +12,9 @@
     <delete id="deleteById">
         DELETE FROM score WHERE id = #{id}
     </delete>
+    <select id="countByExamAndStudent" resultType="int">
+        SELECT COUNT(*) FROM score
+        WHERE exam_id = #{examId} AND student_id = #{studentId}
+        <if test="excludeId != null">AND id != #{excludeId}</if>
+    </select>
 </mapper>

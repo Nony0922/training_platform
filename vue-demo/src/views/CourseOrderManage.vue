@@ -1,43 +1,54 @@
 <template>
   <div class="manage-page">
+    <PageSkeleton v-if="pageLoading" variant="cards" />
+    <template v-else>
+    <PageIntro text="管理课程购买订单，跟踪支付状态与家长报名记录。" />
+    <StatCards :items="orderStats" />
     <div class="toolbar">
       <button class="btn btn-primary" @click="handleAdd">新增课程购买</button>
     </div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>订单号</th>
-            <th>家长</th>
-            <th>课程名称</th>
-            <th>任课教师</th>
-            <th>学时</th>
-            <th>费用</th>
-            <th>状态</th>
-            <th>支付时间</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in list" :key="item.id">
-            <td>{{ item.id ?? '-' }}</td>
-            <td>{{ item.orderNo ?? '-' }}</td>
-            <td>{{ item.parentName ?? '-' }}</td>
-            <td>{{ item.courseName ?? '-' }}</td>
-            <td>{{ item.teacherName ?? '-' }}</td>
-            <td>{{ item.hours ?? '-' }}</td>
-            <td>{{ item.fee ?? '-' }}</td>
-            <td>{{ formatCell(item.status, 'orderStatus') }}</td>
-            <td>{{ item.payTime ?? '-' }}</td>
-            <td class="actions">
+    <div v-if="!list.length" class="empty-tip">暂无订单数据</div>
+    <template v-else>
+      <div
+        v-for="section in orderSections"
+        :key="section.key"
+        class="status-section"
+        :class="`status-section--${section.key}`"
+      >
+        <div class="status-section-head">
+          <span>{{ section.label }}</span>
+          <span>{{ section.rows.length }} 笔</span>
+        </div>
+        <div class="status-section-body">
+          <div
+            v-for="item in section.rows"
+            :key="item.id"
+            class="entity-card order-card"
+            :class="orderCardClass(item.status)"
+          >
+            <div class="entity-card-head">
+              <div>
+                <h3 class="entity-card-title">{{ item.courseName ?? '-' }}</h3>
+                <p class="order-card-no">{{ item.orderNo ?? '-' }}</p>
+              </div>
+              <span :class="['badge', item.status === 1 ? 'badge-success' : item.status === 0 ? 'badge-warning' : 'badge-info']">
+                {{ formatCell(item.status, 'orderStatus') }}
+              </span>
+            </div>
+            <div class="entity-card-body">
+              <div class="info-row"><span class="info-row-label">家长</span><span class="info-row-value">{{ item.parentName ?? '-' }}</span></div>
+              <div class="info-row"><span class="info-row-label">教师</span><span class="info-row-value">{{ item.teacherName ?? '-' }}</span></div>
+              <div class="info-row"><span class="info-row-label">费用</span><span class="info-row-value">¥{{ item.fee ?? '-' }}</span></div>
+              <div class="info-row"><span class="info-row-label">支付</span><span class="info-row-value">{{ item.payTime || '-' }}</span></div>
+            </div>
+            <div class="entity-card-foot">
               <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
               <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
     <div v-if="dialogVisible" class="dialog-overlay" @click.self="dialogVisible = false">
       <div class="dialog">
         <div class="dialog-header">
@@ -92,14 +103,24 @@
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { getCourseOrderListApi, addCourseOrderApi, updateCourseOrderApi, deleteCourseOrderApi } from '@/api/courseOrder'
 import { getParentListApi } from '@/api/parent'
 import { getCourseListApi } from '@/api/course'
+import PageSkeleton from '@/components/PageSkeleton.vue'
+import PageIntro from '@/components/PageIntro.vue'
+import StatCards from '@/components/StatCards.vue'
+import { usePageLoading } from '@/composables/usePageLoading'
+import { useFormatCell } from '@/composables/useFormatCell'
+
+const { formatCell } = useFormatCell()
+
+const { pageLoading, withLoading } = usePageLoading()
 
 const list = ref([])
 const dialogVisible = ref(false)
@@ -121,28 +142,24 @@ const form = reactive({
   payTime: ''
 })
 
+const orderStats = computed(() => [
+  { label: '订单总数', value: list.value.length, icon: '📋', tone: 'purple' },
+  { label: '待支付', value: list.value.filter(o => o.status === 0).length, icon: '⏳', tone: 'orange' },
+  { label: '已支付', value: list.value.filter(o => o.status === 1).length, icon: '✅', tone: 'green' },
+  { label: '已取消', value: list.value.filter(o => o.status === 2).length, icon: '✖', tone: 'red' }
+])
 
-const formatCell = (v, type) => {
-  const m = {
-    gender: v => v === 1 ? '男' : v === 2 ? '女' : '-',
-    teacherLevel: v => v === 2 ? '班主任' : v === 1 ? '任课教师' : '-',
-    status: v => v === 1 ? '正常' : '停用',
-    shelf: v => v === 1 ? '上架' : '下架',
-    annStatus: v => v === 1 ? '已发布' : '草稿',
-    role: v => ({all:'全部',admin:'管理员',teacher:'教师',parent:'家长'}[v] || v),
-    weekday: v => ['','周一','周二','周三','周四','周五','周六','周日'][v] || '-',
-    progressStatus: v => ['未开始','进行中','已完成'][v] || '-',
-    examStatus: v => ['未开始','进行中','已结束'][v] || '-',
-    attendanceStatus: v => ['','正常','迟到','早退','缺勤','请假'][v] || '-',
-    abnormalType: v => ['','','迟到','早退','缺勤'][v] || '-',
-    handleStatus: v => v === 1 ? '已处理' : '待处理',
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回'][v] || '-',
-    visitType: v => ['','上门','电话','线上'][v] || '-',
-    orderStatus: v => ['待支付','已支付','已取消'][v] || '-',
-    msgStatus: v => v === 1 ? '已回复' : '待回复',
-  }
-  return (m[type] ? m[type](v) : v) ?? '-'
+const orderSections = computed(() => [
+  { key: 'pending', label: '待支付', rows: list.value.filter(o => o.status === 0) },
+  { key: 'paid', label: '已支付', rows: list.value.filter(o => o.status === 1) },
+  { key: 'cancelled', label: '已取消', rows: list.value.filter(o => o.status === 2) }
+].filter(s => s.rows.length > 0))
+
+const orderCardClass = (status) => {
+  if (status === 0) return 'order-card--pending'
+  if (status === 1) return 'order-card--paid'
+  if (status === 2) return 'order-card--cancelled'
+  return ''
 }
 
 const onCourseChange = () => {
@@ -167,12 +184,12 @@ const resetForm = () => {
   payTime: '' })
 }
 
-const loadList = async () => {
+const loadList = () => withLoading(async () => {
   try {
     const res = await getCourseOrderListApi()
     list.value = res.data || []
   } catch (e) { alert(e.message) }
-}
+})
 
 const handleAdd = () => {
   isEdit.value = false

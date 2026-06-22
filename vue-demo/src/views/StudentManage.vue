@@ -12,36 +12,20 @@
         <span class="group-title">{{ group.className }}</span>
         <span class="group-meta">{{ group.rows.length }} 名学生</span>
       </div>
-      <div class="table-container">
-        <table class="data-table group-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>姓名</th>
-              <th>性别</th>
-              <th>家长</th>
-              <th>电话</th>
-              <th>入学日期</th>
-              <th>状态</th>
-              <th v-if="!readOnly">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in group.rows" :key="item.id">
-              <td>{{ item.id ?? '-' }}</td>
-              <td>{{ item.name ?? '-' }}</td>
-              <td>{{ formatCell(item.gender, 'gender') }}</td>
-              <td>{{ item.parentName ?? '-' }}</td>
-              <td>{{ item.phone ?? '-' }}</td>
-              <td>{{ item.enrollDate ?? '-' }}</td>
-              <td>{{ formatCell(item.status, 'status') }}</td>
-              <td v-if="!readOnly" class="actions">
-                <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
-                <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="person-grid">
+        <div v-for="item in group.rows" :key="item.id" class="person-card">
+          <div class="person-card-name">{{ item.name ?? '-' }}</div>
+          <div class="person-card-meta">
+            {{ formatCell(item.gender, 'gender') }} · {{ formatCell(item.status, 'status') }}<br>
+            家长：{{ item.parentName ?? '-' }}<br>
+            电话：{{ item.phone ?? '-' }}<br>
+            入学：{{ item.enrollDate ?? '-' }}
+          </div>
+          <div v-if="!readOnly" class="actions">
+            <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
+            <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
+          </div>
+        </div>
       </div>
     </div>
     </template>
@@ -111,6 +95,9 @@ import { getScopeModeFromRoute } from '@/composables/useTeacherScope'
 import { groupByClass } from '@/utils/groupTeachingData'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import { usePageLoading } from '@/composables/usePageLoading'
+import { useFormatCell } from '@/composables/useFormatCell'
+
+const { formatCell } = useFormatCell()
 
 const route = useRoute()
 const readOnly = useReadOnly()
@@ -137,31 +124,6 @@ const form = reactive({
   enrollDate: '',
   status: 1
 })
-
-
-const formatCell = (v, type) => {
-  const m = {
-    gender: v => v === 1 ? '男' : v === 2 ? '女' : '-',
-    teacherLevel: v => v === 2 ? '班主任' : v === 1 ? '任课教师' : '-',
-    status: v => v === 1 ? '正常' : '停用',
-    shelf: v => v === 1 ? '上架' : '下架',
-    annStatus: v => v === 1 ? '已发布' : '草稿',
-    role: v => ({all:'全部',admin:'管理员',teacher:'教师',parent:'家长'}[v] || v),
-    weekday: v => ['','周一','周二','周三','周四','周五','周六','周日'][v] || '-',
-    progressStatus: v => ['未开始','进行中','已完成'][v] || '-',
-    examStatus: v => ['未开始','进行中','已结束'][v] || '-',
-    attendanceStatus: v => ['','正常','迟到','早退','缺勤','请假'][v] || '-',
-    abnormalType: v => ['','','迟到','早退','缺勤'][v] || '-',
-    handleStatus: v => v === 1 ? '已处理' : '待处理',
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回'][v] || '-',
-    visitType: v => ['','上门','电话','线上'][v] || '-',
-    orderStatus: v => ['待支付','已支付','已取消'][v] || '-',
-    msgStatus: v => v === 1 ? '已回复' : '待回复',
-  }
-  return (m[type] ? m[type](v) : v) ?? '-'
-}
-const onCourseChange = () => {}
 
 const resetForm = () => {
   Object.assign(form, { id: null, name: '',

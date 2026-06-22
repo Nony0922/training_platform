@@ -2,6 +2,7 @@
   <div class="manage-page">
     <PageSkeleton v-if="pageLoading" variant="grouped" />
     <template v-else>
+    <PageIntro text="按课程与考试分组展示成绩，前三名以奖牌样式高亮，支持录入与维护。" />
     <div class="toolbar">
       <button class="btn btn-primary" @click="handleAdd">新增成绩</button>
     </div>
@@ -20,30 +21,17 @@
           </div>
           <span class="subgroup-meta">{{ group.rows.length }} 名学生</span>
         </div>
-        <div class="table-container">
-          <table class="data-table group-table">
-            <thead>
-              <tr>
-                <th>排名</th>
-                <th>学生</th>
-                <th>分数</th>
-                <th>备注</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in group.rows" :key="item.id">
-                <td>{{ item.rankNum ?? '-' }}</td>
-                <td>{{ item.studentName ?? '-' }}</td>
-                <td>{{ item.score ?? '-' }}</td>
-                <td>{{ item.remark ?? '-' }}</td>
-                <td class="actions">
-                  <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
-                  <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="score-list">
+          <div v-for="item in group.rows" :key="item.id" class="score-row">
+            <span :class="['score-rank', item.rankNum && Number(item.rankNum) <= 3 ? `score-rank--${item.rankNum}` : '']">
+              {{ item.rankNum ?? '-' }}
+            </span>
+            <span class="score-row-name">{{ item.studentName ?? '-' }}</span>
+            <span class="score-row-value">{{ item.score ?? '-' }}</span>
+            <span style="font-size: 12px; color: #9ca3af; max-width: 120px; overflow: hidden; text-overflow: ellipsis">{{ item.remark || '-' }}</span>
+            <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
+            <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
+          </div>
         </div>
       </div>
     </div>
@@ -94,6 +82,7 @@ import { getStudentListApi } from '@/api/student'
 import { getScopeModeFromRoute } from '@/composables/useTeacherScope'
 import { groupScoresByCourseExam } from '@/utils/groupTeachingData'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import PageIntro from '@/components/PageIntro.vue'
 import { usePageLoading } from '@/composables/usePageLoading'
 
 const route = useRoute()
@@ -121,30 +110,6 @@ const form = reactive({
   remark: ''
 })
 
-
-const formatCell = (v, type) => {
-  const m = {
-    gender: v => v === 1 ? '男' : v === 2 ? '女' : '-',
-    teacherLevel: v => v === 2 ? '班主任' : v === 1 ? '任课教师' : '-',
-    status: v => v === 1 ? '正常' : '停用',
-    shelf: v => v === 1 ? '上架' : '下架',
-    annStatus: v => v === 1 ? '已发布' : '草稿',
-    role: v => ({all:'全部',admin:'管理员',teacher:'教师',parent:'家长'}[v] || v),
-    weekday: v => ['','周一','周二','周三','周四','周五','周六','周日'][v] || '-',
-    progressStatus: v => ['未开始','进行中','已完成'][v] || '-',
-    examStatus: v => ['未开始','进行中','已结束'][v] || '-',
-    attendanceStatus: v => ['','正常','迟到','早退','缺勤','请假'][v] || '-',
-    abnormalType: v => ['','','迟到','早退','缺勤'][v] || '-',
-    handleStatus: v => v === 1 ? '已处理' : '待处理',
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回'][v] || '-',
-    visitType: v => ['','上门','电话','线上'][v] || '-',
-    orderStatus: v => ['待支付','已支付','已取消'][v] || '-',
-    msgStatus: v => v === 1 ? '已回复' : '待回复',
-  }
-  return (m[type] ? m[type](v) : v) ?? '-'
-}
-const onCourseChange = () => {}
 
 const resetForm = () => {
   Object.assign(form, { id: null, examId: null,

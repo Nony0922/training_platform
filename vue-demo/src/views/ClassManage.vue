@@ -1,40 +1,45 @@
 <template>
   <div class="manage-page">
-    <PageSkeleton v-if="pageLoading" />
+    <PageSkeleton v-if="pageLoading" variant="cards" />
     <template v-else>
+    <PageIntro text="管理培训班级信息，查看各班容量使用情况与班主任安排。" />
     <div class="toolbar">
       <button class="btn btn-primary" @click="handleAdd">新增班级</button>
     </div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>班级名称</th>
-            <th>年级</th>
-            <th>班主任</th>
-            <th>教室</th>
-            <th>容量</th>
-            <th>状态</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in list" :key="item.id">
-            <td>{{ item.id ?? '-' }}</td>
-            <td>{{ item.name ?? '-' }}</td>
-            <td>{{ item.grade ?? '-' }}</td>
-            <td>{{ item.headTeacherName ?? '-' }}</td>
-            <td>{{ item.room ?? '-' }}</td>
-            <td>{{ item.capacity ?? '-' }}</td>
-            <td>{{ formatCell(item.status, 'status') }}</td>
-            <td class="actions">
-              <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
-              <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-if="!list.length" class="empty-tip">暂无班级数据</div>
+    <div v-else class="card-grid">
+      <div v-for="item in list" :key="item.id" class="entity-card">
+        <div class="profile-card">
+          <div class="avatar-badge avatar-badge--class">{{ (item.name || '班').charAt(0) }}</div>
+          <div class="profile-card-main">
+            <div class="entity-card-head" style="margin-bottom: 0">
+              <div>
+                <h3 class="entity-card-title">{{ item.name ?? '-' }}</h3>
+                <p class="entity-card-sub">{{ item.grade || '未设置年级' }} · {{ item.room || '未分配教室' }}</p>
+              </div>
+              <span :class="['badge', item.status === 1 ? 'badge-success' : 'badge-danger']">
+                {{ formatCell(item.status, 'status') }}
+              </span>
+            </div>
+            <div class="entity-card-body" style="margin-top: 10px">
+              <div class="info-row"><span class="info-row-label">班主任</span><span class="info-row-value">{{ item.headTeacherName || '-' }}</span></div>
+              <div class="info-row">
+                <span class="info-row-label">容量</span>
+                <span class="info-row-value">
+                  {{ item.studentCount != null ? `${item.studentCount} / ${item.capacity ?? '-'}` : item.capacity ?? '-' }}
+                </span>
+              </div>
+              <div class="capacity-bar">
+                <div class="capacity-bar-fill" :style="{ width: capacityPercent(item) + '%' }" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="entity-card-foot">
+          <button class="btn btn-sm btn-info" @click="handleEdit(item)">编辑</button>
+          <button class="btn btn-sm btn-danger" @click="handleDelete(item.id)">删除</button>
+        </div>
+      </div>
     </div>
     <div v-if="dialogVisible" class="dialog-overlay" @click.self="dialogVisible = false">
       <div class="dialog">
@@ -90,7 +95,11 @@ import { ref, reactive, onMounted } from 'vue'
 import { getClazzListApi, addClazzApi, updateClazzApi, deleteClazzApi } from '@/api/clazz'
 import { getTeacherListApi } from '@/api/teacher'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import PageIntro from '@/components/PageIntro.vue'
 import { usePageLoading } from '@/composables/usePageLoading'
+import { useFormatCell } from '@/composables/useFormatCell'
+
+const { formatCell } = useFormatCell()
 
 const { pageLoading, withLoading } = usePageLoading()
 
@@ -111,30 +120,12 @@ const form = reactive({
   status: 1
 })
 
-
-const formatCell = (v, type) => {
-  const m = {
-    gender: v => v === 1 ? '男' : v === 2 ? '女' : '-',
-    teacherLevel: v => v === 2 ? '班主任' : v === 1 ? '任课教师' : '-',
-    status: v => v === 1 ? '正常' : '停用',
-    shelf: v => v === 1 ? '上架' : '下架',
-    annStatus: v => v === 1 ? '已发布' : '草稿',
-    role: v => ({all:'全部',admin:'管理员',teacher:'教师',parent:'家长'}[v] || v),
-    weekday: v => ['','周一','周二','周三','周四','周五','周六','周日'][v] || '-',
-    progressStatus: v => ['未开始','进行中','已完成'][v] || '-',
-    examStatus: v => ['未开始','进行中','已结束'][v] || '-',
-    attendanceStatus: v => ['','正常','迟到','早退','缺勤','请假'][v] || '-',
-    abnormalType: v => ['','','迟到','早退','缺勤'][v] || '-',
-    handleStatus: v => v === 1 ? '已处理' : '待处理',
-    leaveType: v => ['','事假','病假','其他'][v] || '-',
-    leaveStatus: v => ['待审批','已通过','已驳回'][v] || '-',
-    visitType: v => ['','上门','电话','线上'][v] || '-',
-    orderStatus: v => ['待支付','已支付','已取消'][v] || '-',
-    msgStatus: v => v === 1 ? '已回复' : '待回复',
+const capacityPercent = (item) => {
+  if (item.studentCount != null && item.capacity) {
+    return Math.min(100, Math.round((item.studentCount / item.capacity) * 100))
   }
-  return (m[type] ? m[type](v) : v) ?? '-'
+  return 100
 }
-const onCourseChange = () => {}
 
 const resetForm = () => {
   Object.assign(form, { id: null, name: '',

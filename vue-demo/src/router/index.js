@@ -19,6 +19,9 @@ const TeacherSchedule = () => import('@/views/TeacherSchedule.vue')
 const HomeVisitManage = () => import('@/views/HomeVisitManage.vue')
 const LearningReport = () => import('@/views/LearningReport.vue')
 const ProgressManage = () => import('@/views/ProgressManage.vue')
+const ScheduleManage = () => import('@/views/ScheduleManage.vue')
+const AbnormalAttendanceManage = () => import('@/views/AbnormalAttendanceManage.vue')
+const CourseOrderManage = () => import('@/views/CourseOrderManage.vue')
 
 const routes = [
   {
@@ -84,6 +87,18 @@ const routes = [
         meta: { title: '课程管理', roles: ['admin'], group: 'school' }
       },
       {
+        path: 'course-orders',
+        name: 'CourseOrderManage',
+        component: CourseOrderManage,
+        meta: { title: '课程订单管理', roles: ['admin'], group: 'school' }
+      },
+      {
+        path: 'schedules',
+        name: 'ScheduleManage',
+        component: ScheduleManage,
+        meta: { title: '课程表管理', roles: ['admin'], group: 'school' }
+      },
+      {
         path: 'progress',
         name: 'ProgressManage',
         component: ProgressManage,
@@ -96,10 +111,22 @@ const routes = [
         meta: { title: '考试管理', roles: ['admin'], group: 'school' }
       },
       {
+        path: 'scores',
+        name: 'AdminScoreManage',
+        component: ScoreManage,
+        meta: { title: '成绩管理', roles: ['admin'], group: 'school' }
+      },
+      {
         path: 'attendance',
         name: 'AttendanceManage',
         component: AttendanceManage,
         meta: { title: '考勤管理', roles: ['admin'], group: 'school' }
+      },
+      {
+        path: 'abnormal-attendance',
+        name: 'AbnormalAttendanceManage',
+        component: AbnormalAttendanceManage,
+        meta: { title: '异常考勤管理', roles: ['admin'], group: 'school' }
       },
       {
         path: 'schedule-ai',
@@ -124,7 +151,7 @@ const routes = [
         path: 'browse/courses',
         name: 'CourseBrowse',
         component: CourseManage,
-        meta: { title: '我的课程', roles: ['teacher'], teacherLevels: [1, 2], scopeMode: 'teaching', readOnly: true }
+        meta: { title: '我的课程', roles: ['teacher'], teacherLevels: [1, 2], readOnly: true }
       },
       {
         path: 'teacher/schedule',
