@@ -10,7 +10,7 @@
   background: #fff;
   border-radius: 16rpx;
   padding: 28rpx;
-  box-shadow: 0 4rpx 16rpx rgba(124, 58, 237, 0.08);
+  box-shadow: 0 4rpx 16rpx rgba(46, 173, 106, 0.08);
 }
 
 .report-title {
@@ -35,6 +35,6 @@
 .report-arrow {
   margin-top: 16rpx;
   font-size: 26rpx;
-  color: #7c3aed;
+  color: #2ead6a;
   text-align: right;
 }

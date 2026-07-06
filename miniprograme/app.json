@@ -20,13 +20,13 @@
   ],
   "window": {
     "navigationBarTitleText": "心田花开",
-    "navigationBarBackgroundColor": "#7c3aed",
+    "navigationBarBackgroundColor": "#2ead6a",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#f5f3ff"
+    "backgroundColor": "#fafdf8"
   },
   "tabBar": {
     "color": "#9ca3af",
-    "selectedColor": "#7c3aed",
+    "selectedColor": "#2ead6a",
     "backgroundColor": "#ffffff",
     "borderStyle": "white",
     "list": [

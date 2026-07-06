@@ -262,7 +262,7 @@ onMounted(() => {
   margin-bottom: 16px;
   background: #f9fafb;
   border-radius: 8px;
-  border-left: 3px solid #7c3aed;
+  border-left: 3px solid #2ead6a;
   font-size: 14px;
   line-height: 1.7;
   color: #374151;

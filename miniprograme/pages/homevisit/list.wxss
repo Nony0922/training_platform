@@ -6,7 +6,7 @@
   padding: 24rpx;
   background: #fafafa;
   border-radius: 12rpx;
-  border: 1rpx solid #ede9fe;
+  border: 1rpx solid #e8f8f0;
 }
 
 .visit-card-header {

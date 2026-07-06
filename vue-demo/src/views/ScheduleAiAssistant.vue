@@ -244,9 +244,9 @@ onMounted(async () => {
 
 .page-desc {
   padding: 12px 16px;
-  background: linear-gradient(90deg, #f5f3ff, #eef2ff);
+  background: linear-gradient(90deg, #fafdf8, #f0faf4);
   border-radius: 8px;
-  border-left: 4px solid #7c3aed;
+  border-left: 4px solid #2ead6a;
 }
 
 .page-desc p {
@@ -306,7 +306,7 @@ onMounted(async () => {
 
 .ai-summary-title {
   font-weight: 600;
-  color: #7c3aed;
+  color: #2ead6a;
   margin-bottom: 8px;
 }
 
@@ -376,8 +376,8 @@ onMounted(async () => {
 }
 
 .schedule-block {
-  background: linear-gradient(135deg, #ede9fe, #e0e7ff);
-  border-left: 3px solid #7c3aed;
+  background: linear-gradient(135deg, #e8f8f0, #e8f8f0);
+  border-left: 3px solid #2ead6a;
   border-radius: 6px;
   padding: 6px 8px;
   margin-bottom: 6px;
@@ -418,7 +418,7 @@ onMounted(async () => {
 }
 
 .dot.normal {
-  background: #7c3aed;
+  background: #2ead6a;
 }
 
 .dot.conflict {
@@ -481,8 +481,8 @@ onMounted(async () => {
 }
 
 .source-tag.ai {
-  background: #ede9fe;
-  color: #7c3aed;
+  background: #e8f8f0;
+  color: #2ead6a;
 }
 
 .source-tag.rule {

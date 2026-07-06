@@ -330,9 +330,9 @@ onMounted(async () => {
 
 .page-desc {
   padding: 12px 16px;
-  background: linear-gradient(90deg, #f5f3ff, #eef2ff);
+  background: linear-gradient(90deg, #fafdf8, #f0faf4);
   border-radius: 8px;
-  border-left: 4px solid #7c3aed;
+  border-left: 4px solid #2ead6a;
 }
 
 .page-desc p {
@@ -364,8 +364,8 @@ onMounted(async () => {
 .stat-tag {
   padding: 6px 12px;
   border-radius: 999px;
-  background: #ede9fe;
-  color: #5b21b6;
+  background: #e8f8f0;
+  color: #177a42;
   font-size: 12px;
   font-weight: 600;
 }
@@ -449,12 +449,12 @@ onMounted(async () => {
 
 .schedule-block.mine,
 .list-item.mine {
-  background: linear-gradient(135deg, #ede9fe, #e0e7ff);
-  border-left-color: #7c3aed;
+  background: linear-gradient(135deg, #e8f8f0, #e8f8f0);
+  border-left-color: #2ead6a;
 }
 
 .schedule-block.mine {
-  border-left: 3px solid #7c3aed;
+  border-left: 3px solid #2ead6a;
 }
 
 .block-title,
@@ -491,7 +491,7 @@ onMounted(async () => {
   width: 42px;
   flex-shrink: 0;
   font-weight: 700;
-  color: #7c3aed;
+  color: #2ead6a;
   font-size: 13px;
 }
 

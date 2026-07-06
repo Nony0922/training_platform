@@ -1,6 +1,6 @@
 <view class="login-page">
   <view class="header">
-    <view class="logo">🌸</view>
+    <view class="logo-wrap"><text class="logo">🌼</text></view>
     <text class="title">心田花开</text>
     <text class="subtitle">家长端小程序</text>
   </view>

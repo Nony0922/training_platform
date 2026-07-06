@@ -11,7 +11,7 @@
       <aside class="login-brand">
         <div class="brand-content">
           <div class="brand-logo">
-            <span class="brand-icon">🌸</span>
+            <span class="brand-icon">🌼</span>
             <div>
               <h1>心田花开</h1>
               <p>培训机构综合管理平台</p>
@@ -53,7 +53,7 @@
         <div class="login-card">
           <div class="card-header">
             <div class="mobile-logo">
-              <span>🌸</span>
+              <span class="brand-icon brand-icon--sm">🌼</span>
               <span>心田花开</span>
             </div>
             <h2>欢迎回来</h2>
@@ -191,8 +191,8 @@ onMounted(() => {
 .login-bg {
   position: absolute;
   inset: 0;
-  background-color: #f5f3ff;
-  background-image: url('/flower-pattern.svg'), linear-gradient(145deg, #ede9fe 0%, #faf5ff 40%, #fce7f3 100%);
+  background-color: #fafdf8;
+  background-image: url('/flower-pattern.svg'), linear-gradient(145deg, #fff8e1 0%, #fafdf8 40%, #e8f8f0 100%);
   background-size: var(--flower-pattern-size) var(--flower-pattern-size), 100% 100%;
 }
 
@@ -207,7 +207,7 @@ onMounted(() => {
 .bg-orb--1 {
   width: 420px;
   height: 420px;
-  background: #c4b5fd;
+  background: #f5c842;
   top: -120px;
   right: 10%;
   animation-delay: 0s;
@@ -216,7 +216,7 @@ onMounted(() => {
 .bg-orb--2 {
   width: 320px;
   height: 320px;
-  background: #f0abfc;
+  background: #7dd4a0;
   bottom: -80px;
   left: 5%;
   animation-delay: -3s;
@@ -225,7 +225,7 @@ onMounted(() => {
 .bg-orb--3 {
   width: 200px;
   height: 200px;
-  background: #fbcfe8;
+  background: #e8f8f0;
   top: 40%;
   left: 45%;
   animation-delay: -5s;
@@ -247,7 +247,7 @@ onMounted(() => {
   border-radius: 24px;
   overflow: hidden;
   box-shadow:
-    0 24px 80px rgba(91, 33, 182, 0.18),
+    0 24px 80px rgba(46, 173, 106, 0.18),
     0 0 0 1px rgba(255, 255, 255, 0.6);
   animation: card-in 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -267,7 +267,7 @@ onMounted(() => {
 .login-brand {
   flex: 1;
   position: relative;
-  background: linear-gradient(160deg, #6d28d9 0%, #5b21b6 45%, #4c1d95 100%);
+  background: linear-gradient(160deg, #f5c842 0%, #2ead6a 45%, #1f8f55 100%);
   padding: 48px 44px;
   display: flex;
   flex-direction: column;
@@ -428,11 +428,21 @@ onMounted(() => {
   margin-bottom: 24px;
   font-size: 18px;
   font-weight: 700;
-  color: var(--primary, #7c3aed);
+  color: var(--primary, #2ead6a);
 }
 
-.mobile-logo span:first-child {
-  font-size: 28px;
+.brand-icon--sm {
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  background: linear-gradient(135deg, #fff8e1, #e8f8f0);
+  border: 1px solid var(--border, #b8e6ce);
+  border-radius: 12px;
+  color: inherit;
+}
+
+.mobile-logo span:last-child {
+  color: var(--primary-dark, #1f8f55);
 }
 
 .card-header h2 {
@@ -500,9 +510,9 @@ onMounted(() => {
 
 .form-input:focus {
   outline: none;
-  border-color: var(--primary, #7c3aed);
+  border-color: var(--primary, #2ead6a);
   background: #fff;
-  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+  box-shadow: 0 0 0 4px rgba(46, 173, 106, 0.1);
 }
 
 .form-options {
@@ -539,8 +549,8 @@ onMounted(() => {
 }
 
 .checkbox-label input:checked + .checkbox-box {
-  background: var(--primary, #7c3aed);
-  border-color: var(--primary, #7c3aed);
+  background: var(--accent, #f5c842);
+  border-color: var(--accent, #f5c842);
 }
 
 .checkbox-label input:checked + .checkbox-box::after {
@@ -555,8 +565,8 @@ onMounted(() => {
   height: 52px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%);
-  color: #fff;
+  background: linear-gradient(135deg, #f5c842 0%, #e8b020 50%, #d4a010 100%);
+  color: #374151;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -565,12 +575,12 @@ onMounted(() => {
   justify-content: center;
   gap: 8px;
   transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 4px 16px rgba(245, 200, 66, 0.35);
 }
 
 .login-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.4);
+  box-shadow: 0 8px 24px rgba(245, 200, 66, 0.4);
 }
 
 .login-btn:active:not(:disabled) {

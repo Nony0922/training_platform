@@ -1,15 +1,48 @@
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(160deg, #7c3aed 0%, #5b21b6 40%, #f5f3ff 40%);
+  background: linear-gradient(180deg, #f5c842 0%, #7dd4a0 18%, #e8f8f0 38%, #fafdf8 58%, #ffffff 100%);
   padding: 80rpx 40rpx;
   box-sizing: border-box;
 }
 .header { text-align: center; color: #fff; margin-bottom: 60rpx; }
-.logo { font-size: 80rpx; margin-bottom: 16rpx; }
-.title { display: block; font-size: 48rpx; font-weight: 700; }
-.subtitle { display: block; font-size: 26rpx; opacity: 0.85; margin-top: 8rpx; }
-.form-card { background: #fff; border-radius: 24rpx; padding: 48rpx 40rpx; box-shadow: 0 16rpx 48rpx rgba(124,58,237,0.15); }
+.logo-wrap {
+  width: 120rpx;
+  height: 120rpx;
+  margin: 0 auto 16rpx;
+  background: rgba(255, 255, 255, 0.25);
+  border: 2rpx solid rgba(255, 255, 255, 0.35);
+  border-radius: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.logo { font-size: 64rpx; line-height: 1; }
+.title { display: block; font-size: 48rpx; font-weight: 700; text-shadow: 0 2rpx 8rpx rgba(31, 143, 85, 0.2); }
+.subtitle { display: block; font-size: 26rpx; opacity: 0.9; margin-top: 8rpx; }
+.form-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24rpx;
+  padding: 48rpx 40rpx;
+  box-shadow: 0 16rpx 48rpx rgba(46, 173, 106, 0.15);
+  border: 1rpx solid rgba(184, 230, 206, 0.6);
+}
 .form-item { margin-bottom: 32rpx; }
 .label { display: block; font-size: 26rpx; color: #6b7280; margin-bottom: 12rpx; }
-.input { height: 88rpx; background: #f9fafb; border-radius: 12rpx; padding: 0 24rpx; border: 2rpx solid #e5e7eb; }
-.btn-login { margin-top: 16rpx; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; border-radius: 12rpx; height: 88rpx; line-height: 88rpx; font-size: 32rpx; }
+.input {
+  height: 88rpx;
+  background: #f7fcf9;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  border: 2rpx solid #b8e6ce;
+}
+.btn-login {
+  margin-top: 16rpx;
+  background: linear-gradient(135deg, #f5c842, #e8b020);
+  color: #374151;
+  border-radius: 12rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 24rpx rgba(245, 200, 66, 0.35);
+}

@@ -385,11 +385,11 @@ const handleResize = () => {
 }
 
 .page-desc {
-  background: #faf5ff;
-  border: 1px solid #e9d5ff;
+  background: #f7fcf9;
+  border: 1px solid #b8e6ce;
   border-radius: 8px;
   padding: 14px 18px;
-  color: #4c1d95;
+  color: #146b38;
   font-size: 14px;
   line-height: 1.6;
 }
@@ -470,16 +470,16 @@ const handleResize = () => {
 
 .preset-btn {
   padding: 4px 10px;
-  border: 1px solid #ddd6fe;
-  background: #f5f3ff;
-  color: #6d28d9;
+  border: 1px solid #b8e6ce;
+  background: #fafdf8;
+  color: #1f8f55;
   border-radius: 999px;
   font-size: 12px;
   cursor: pointer;
 }
 
 .preset-btn:hover:not(:disabled) {
-  background: #ede9fe;
+  background: #e8f8f0;
 }
 
 .preset-btn:disabled {
@@ -502,8 +502,8 @@ const handleResize = () => {
 }
 
 .btn-primary {
-  background: #7c3aed;
-  border-color: #7c3aed;
+  background: #2ead6a;
+  border-color: #2ead6a;
   color: #fff;
 }
 
@@ -621,7 +621,7 @@ th {
 .section-item h3 {
   margin: 0 0 6px;
   font-size: 15px;
-  color: #7c3aed;
+  color: #2ead6a;
 }
 
 .section-item p {
@@ -659,15 +659,15 @@ th {
 .badge {
   margin-left: 8px;
   padding: 2px 6px;
-  background: #ede9fe;
-  color: #6d28d9;
+  background: #e8f8f0;
+  color: #1f8f55;
   border-radius: 4px;
 }
 
 .btn-link {
   border: none;
   background: none;
-  color: #7c3aed;
+  color: #2ead6a;
   cursor: pointer;
   font-size: 13px;
 }
